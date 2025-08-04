@@ -1,5 +1,5 @@
 
-# Relationship between Previous International Collaboration and International Mobility of Researchers
+# Relationship between previous international collaboration and international mobility of researchers
 
 This repository provides data, R scripts, and figures for analyzing the relationship between prior international collaboration and subsequent international mobility of researchers, focusing on country, region, and income group patterns.
 
