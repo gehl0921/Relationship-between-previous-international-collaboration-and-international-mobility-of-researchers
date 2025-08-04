@@ -1,0 +1,1019 @@
+---
+title: "sec 2-International collaboration shapes"
+output: html_document
+date: "2025-07-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(circlize)
+library(ggplot2)
+library(gridExtra)
+library(grid) 
+library(ggrepel)
+library(patchwork)
+```
+
+```{r}
+mobi_rate_pair <-read.csv("//VUW/Personal$/Homes/G/geh1/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/mobility ratio--origin and destination from--more than 100--1990-2019_2023.csv") 
+```
+
+
+```{r}
+# Define 15 focal origin countries
+country_15 <- c("JP", "RU", "CN", "ES", "BR", "KR", "US", "IN", "DE", "IT", "UK", "NL", "CA", "FR", "AU")
+
+#prepare top 3 destinations of 15 countries by collaboration and mobility
+mobi_coll_prop_coll<-mobi_rate_pair %>% select(origin, destination, prop_coll)
+mobi_coll_prop_mobi<-mobi_rate_pair %>% select(origin, destination, prop_mobi)
+
+top3_coll <- mobi_coll_prop_coll %>% 
+        filter(origin %in% country_15) %>%
+        group_by(origin) %>%
+        top_n(3, wt = prop_coll)
+
+top3_mobi <-  mobi_coll_prop_mobi %>% 
+        filter(origin %in% country_15) %>%
+        group_by(origin) %>%
+        top_n(3, wt = prop_mobi)
+
+# Convert to long format
+
+top3_coll_long <- top3_coll %>%
+              pivot_longer(cols = prop_coll, 
+                           names_to = "prop_type", 
+                           values_to = "prop_value")
+
+top3_mobi_long <- top3_mobi %>%
+              pivot_longer(cols = prop_mobi, 
+                           names_to = "prop_type", 
+                           values_to = "prop_value")
+
+
+# Combine both datasets
+df_top3_long  <- bind_rows(top3_coll_long,top3_mobi_long)
+
+df_top3_long$prop_value<-as.numeric(df_top3_long$prop_value)
+
+# Define destination colors
+destination_color <- c(
+  "US" = "#1f77b4", "CN" = "#d62728", "UK" = "#2ca02c", "DE" = "#ff7f0e",
+  "FR" = "#9467bd", "JP" = "#8c564b", "CA" = "#FBD63C", "AU" = "#ffbb78", "CH" = "#008080"
+)
+
+# Function to plot for each origin
+plot_origin <- function(origin_name) {
+  df_origin <- df_top3_long %>%
+    filter(origin == origin_name) %>%
+    group_by(origin, prop_type) %>%
+    arrange(prop_value, .by_group = TRUE) %>%
+    mutate(destination_ordered = paste0(destination, "_", prop_type)) %>%
+    ungroup()
+
+ # Set stacking order
+  df_origin$destination_ordered <- factor(df_origin$destination_ordered, levels = unique(df_origin$destination_ordered))
+
+# Extract color mapping for this plot
+  this_dest <- unique(df_origin$destination)
+  dest_colors <- destination_color[this_dest]
+  fill_colors <- setNames(dest_colors[as.character(df_origin$destination)], df_origin$destination_ordered)
+
+
+  ggplot(df_origin, aes(
+    x = factor(prop_type, levels = c("prop_coll", "prop_mobi"), labels = c("IC", "IM")),
+    y = prop_value,
+    fill = destination_ordered
+  )) +
+    geom_bar(stat = "identity", position = "stack") +
+     scale_y_continuous(limits = c(0, 1.2), breaks = c(0, 0.2,0.4,0.6,0.8,1,1.2))+
+    scale_fill_manual(
+      values = fill_colors,
+      name = "Destination"
+    ) +
+    labs(title = paste("From:", origin_name), x = NULL, y = if (origin_name %in% c("AU", "ES", "KR")) "Proportion" else NULL) +
+
+theme(
+    legend.position = "none", 
+    axis.text.x = if (origin_name %in% c( "KR","NL","RU","UK","US")) element_text(size = 30) else element_blank(), 
+    axis.title.x = element_blank(), 
+    axis.text.y = if (origin_name %in% c("AU", "ES", "KR")) element_text(size = 30) else element_blank(),
+    axis.title.y = if (origin_name %in% c("ES")) element_text(size = 40) else element_blank(),
+    panel.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(color="grey"),  
+    panel.grid.minor = element_blank(),  
+    panel.grid.major.x = element_blank(), 
+    panel.border = element_blank(),
+    plot.title = element_text(hjust = 0.5, vjust = 0.5, size = 30),
+    axis.line.y = if (origin_name %in% c("AU", "ES", "KR")) element_line(size = 1.5) else element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.ticks.x = element_line(size = 1.5),
+    axis.ticks.length.x = unit(0.5, "cm")
+)
+}
+
+# plot all plots
+origin_list <- sort(unique(as.character(df_top3_long$origin)))
+
+
+plot_list <- lapply(origin_list, plot_origin)
+
+# Assemble 3x5 panel of plots using patchwork
+final_plot <- wrap_plots(plotlist = plot_list, nrow = 3, ncol = 5, guides = "collect") 
+
+# Create a separate legend plot (only for destination colors)
+plot_legend <- ggplot(df_top3_long, aes(
+  x = factor(prop_type, levels = c("prop_coll", "prop_mobi"), labels = c("IC", "IM")),
+  y = prop_value,
+  fill = destination
+)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = destination_color, name = "Destination") +
+  theme_minimal()+
+    theme(
+    legend.position = "right",
+    legend.direction = "horizontal",  # 👈 关键设置
+    legend.box = "horizontal",
+    legend.title = element_blank(),
+    legend.text = element_text(size = 40),
+    legend.key.size= unit(1.5, "cm"),
+  )
+# Extract legend only
+legend_shared <- cowplot::get_legend(plot_legend)
+
+# Combine 15 plots with extracted legend
+png(file="C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Fig QSS6--top 3 destination and collaboration.png", width=2000,height=1500)
+cowplot::plot_grid(final_plot, legend_shared, ncol = 1, rel_heights = c(1, 0.1))
+dev.off()
+```
+
+
+```{r}
+mobility_pair_15<-
+  c(
+"CN-US",
+"US-CA",
+"CA-US",
+"DE-US",
+"JP-US",
+"US-UK",
+"UK-US",
+"US-CN",
+"US-DE",
+"IN-US",
+"FR-US",
+"KR-US",
+"IT-US",
+"BR-US",
+"US-KR")
+
+color <- c(
+     "#1f77b4",
+     "#ff7f0e",
+     "#2ca02c",
+     "#d62728",
+     "#9467bd",
+     "#8c564b",
+     "#e377c2",
+     "#FBD63C",
+     "#bcbd22",
+     "#17becf",
+     "#aec7e8",
+     "#ffbb78",
+     "#98df8a",
+     "#ff9896",
+     "#008080")
+
+pair_style <- data.frame(mobility_pair_15, color)
+pair_style$shape <- 16
+ 
+mobi_rate_pair  <-
+  merge(mobi_rate_pair,
+        pair_style,
+        by.x = "mobility_pair",
+        by.y = "mobility_pair_15",
+        all.x = TRUE)
+ 
+
+mobi_rate_pair $color[is.na(mobi_rate_pair $color)] <- "#6c757d"
+mobi_rate_pair $shape[is.na(mobi_rate_pair $shape)] <- 1
+ 
+
+mobi_rate_pair $size <- mobi_rate_pair $r_mobi / 100
+
+mobi_rate_pair $size[mobi_rate_pair $size < 10] <- 6
+
+```
+
+
+```{r}
+png(file="C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Fig QSS7--mobility rate--origin and detinaiton.png", width=1500,height=1500)
+ 
+mobi_rate_pair_pair <-mobi_rate_pair  %>% arrange(shape, desc(r_mobi)) %>% mutate(size_scale =scales::rescale(size, to = c(5, 50))) %>% arrange((order)) 
+
+ggplot(mobi_rate_pair_pair,
+           aes(x = MRot_nc, y = MRot_c)) +
+    xlim(0, 0.15) +
+    ylim(0, 0.15) +
+    labs(x = "MRot_nc") +
+    labs(y = "MRot_c") +
+
+    geom_abline(
+      intercept = 0,
+      slope = 1,
+      linetype = 1,
+      color = "#dde5b6",
+      size = 1
+    ) +
+   # geom_smooth(
+   #   formula = y ~ x,
+  #    method = "lm",
+  #    linetype = 1,
+  #    size = 1.2,
+  #    fullrange = TRUE,
+  #    color = "#98c1d9"
+  #  ) +
+    geom_vline(
+      xintercept = median(mobi_rate_pair_pair$ MRot_nc),
+      linetype = "dashed",
+      color = "grey",
+      size = 1.2
+    ) +
+    geom_hline(
+      yintercept = median(mobi_rate_pair_pair$MRot_c),
+      linetype = "dashed",
+      color = "grey",
+      size = 1.2
+    ) +
+      geom_point(
+      colour = mobi_rate_pair_pair$color,
+      size = mobi_rate_pair_pair$size_scale,
+      #size = mobi_rate_pair_p$size,
+      shape = mobi_rate_pair_pair$shape
+    )+
+    #geom_abline(intercept = round(coeff[1],1), slope = round(coeff[2],1), color="blue",
+    #            linetype="dotted", size=1.2)+
+    geom_text_repel(aes(label=ifelse(mobi_rate_pair_pair$size_scale>13.65 & mobi_rate_pair_pair$mobility_pair!="US-CA" &
+                                       mobi_rate_pair_pair$mobility_pair!="US-KR" &
+                                       mobi_rate_pair_pair$mobility_pair!="US-UK" 
+                                     & mobi_rate_pair_pair$mobility_pair!="FR-US"
+                                       & mobi_rate_pair_pair$mobility_pair!="UK-US"
+                                     & mobi_rate_pair_pair$mobility_pair!="DE-US"
+                                     ,as.character(mobi_rate_pair_pair$mobility_pair),'')),hjust=0.5,
+              vjust=0.5,size=8)+
+    geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "US-CA", 
+                                   "US-CA", '')),  hjust = 0, vjust = 1, size = 8)+
+    geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "US-KR", 
+                                   "US-KR", '')),  hjust = 1, vjust = 0, size = 8)+
+    geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "US-UK", 
+                                   "US-UK", '')),  hjust =0, vjust = 1, size = 8)+
+      geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "US-CN", 
+                                   "US-CN", '')),  hjust =0.5, vjust = 0.5, size = 8)+
+   geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "US-DE", 
+                                   "US-DE", '')),  hjust =1, vjust = 0, size = 8)+
+  geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "FR-US", 
+                                   "FR-US", '')),  hjust =0, vjust = 1, size = 8)+
+   geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "UK-US", 
+                                   "UK-US", '')),  hjust =0, vjust = 1, size = 8)+
+   geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "DE-US", 
+                                   "DE-US", '')),  hjust =0.5, vjust = 0, size = 8)+
+  
+
+   # geom_text(aes(label=ifelse(mobi_rate_pair_p$size_scale>10,as.character(mobi_rate_pair_p$mobility_pair),'')),hjust=0,vjust=0,size=10)+
+    scale_size(range = c(0, 15)) +
+    theme_bw() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 40),
+      axis.text = element_text(size = 40),
+      axis.title.x = element_text(size = 40,margin=margin(20,0,0,0)),
+      axis.title.y = element_text(size = 40,margin=margin(0,20,0,0))
+      )
+    
+#,country=iso2,size=size_scale,show.legend = FALSE
+dev.off()
+```
+
+
+```{r}
+country_level<-c("NL",	"FR",	"IT",	"AU",	"DE",	"UK",	"US",	"CA",	"ES",	"BR"	,"IN"	,"KR","RU","JP","CN")
+
+mobility_rate_pair_15 <- mobi_rate_pair[mobi_rate_pair$origin %in% country_15 & mobi_rate_pair$destination %in% country_15, ]
+
+CMRot_15 <- mobility_rate_pair_15[, c('origin', 'destination', 'CMR_ot')]
+
+median_CMRot_15 <- median(CMRot_15 $CMR_ot, na.rm = TRUE)
+
+
+CMRot_15$origin <- factor(CMRot_15$origin,levels = country_level)
+
+CMRot_15$destination <- factor(CMRot_15$destination,levels = country_level)
+
+```
+
+```{r}
+png(file="C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Fig QSS8--countries--mobility rate--origin and detinaiton_2023.png", width=1500,height=1400)
+ggplot(CMRot_15, aes(x = destination, y = origin, fill = CMR_ot)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(CMR_ot, 1)), color = "black", size = 8, 
+            hjust = 0.5, vjust = 0.5) +
+  scale_fill_gradient2(low = "#1f77b4", mid = "white", high = "#d62728", 
+                       midpoint = median_CMRot_15,  limits = c(0, 2*median_CMRot_15), oob = scales::squish,na.value = "grey90") +
+  labs(x = "Destination", y = "Origin", fill = "CMRot")+
+  coord_fixed() +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(), # ????????????
+    plot.title = element_text(hjust = 0.5, size = 40),
+    axis.ticks = element_line(size = 1.5), # ?????????????????????
+    axis.ticks.length = unit(0.5, "cm"),
+    axis.text = element_text(size = 35),
+    axis.title = element_blank(),
+    axis.title.x = element_text(size = 40, margin = margin(20, 0, 0, 0)),
+    axis.title.y = element_text(size = 40, margin = margin(0, 20, 0, 0)),
+    axis.title.y.right = element_text(margin = margin(l = 20)),
+    legend.text = element_text(size = 30),
+      legend.title = element_blank(),
+    legend.key.size = unit(2, "cm"),           
+    legend.key.width = unit(1, "cm"),           
+    legend.key.height = unit(2, "cm")  ,      
+      legend.position = "right"
+  )
+dev.off()
+
+```
+
+
+
+```{r}
+# 1. Remove rows with missing region names
+mobi_rate_pair_region_no_NA<- mobi_rate_pair %>%
+  filter(region_origin != '#N/A' & region_destination != '#N/A')
+
+# 2. Aggregate mobility and collaboration counts by origin-destination region pairs
+
+mobi_coll_region<- mobi_rate_pair_region_no_NA %>%
+  group_by(region_origin, region_destination) %>%
+  summarise(
+    sum_mobi = sum(r_mobi, na.rm = TRUE),
+    sum_coll = sum(r_coll, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+gini_coll_origin_region <- mobi_coll_region %>%
+  group_by(region_origin) %>%
+  summarise(
+    gini_coll = ineq::Gini(sum_coll)
+  )
+
+gini_mobi_origin_region <- mobi_coll_region %>%
+  group_by(region_origin) %>%
+  summarise(
+    gini_mobi = ineq::Gini(sum_mobi)
+  )
+
+mobi_coll_region %>%
+  group_by(region_destination) %>%
+  summarise(
+    gini_coll = ineq::Gini(sum_coll)
+  )
+
+mobi_coll_region %>%
+  group_by(region_destination) %>%
+  summarise(
+    gini_mobi = ineq::Gini(sum_mobi)
+  )
+
+# 3. Compute Gini coefficients to assess distribution inequality
+gini_coll_region <- ineq::Gini(mobi_coll_region$sum_coll)
+#0.7486486
+gini_mobi_region <- ineq::Gini(mobi_coll_region$sum_mobi)
+#0.7265775
+
+# 4. define region color mapping (for plotting later)
+region_color<-c("East Asia & Pacific"="#1F77B4", 
+                   "Europe & Central Asia"="#FF7F0E", 
+                   "Latin America & Caribbean"="#2CA02C", 
+                   "Middle East & North Africa"="#D62728", 
+                   "North America"="#9467BD", 
+                   "South Asia"= "#8c564b",
+                   "Sub-Saharan Africa" = "#eeee00")
+
+# 5. Extract mobility data: region-to-region mobility counts only
+n_mobility_region<-mobi_coll_region[,c("region_origin","region_destination","sum_mobi")] 
+
+# 6. Extract collaboration data: region-to-region collaboration counts only
+n_collaboration_region<-mobi_coll_region[,c("region_origin","region_destination","sum_coll")] 
+
+# 7. Draw mobility and collaboration chord diagram across regions
+png(file="C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Fig QSS--A3--mobility and collaboration--chord diagram between regions.png", width=3300,height=1600,res=300)
+
+# 7.1.  Set 2-panel layout: one for mobility, one for collaboration
+
+par(mfrow=c(1,2))
+
+# 7.2 Draw directional mobility chord diagram
+circos.clear()
+circos.par(gap.after = 8,  # ?????????????????????????????????
+           track.height = 0.01,  # ?????????????????????
+           circle.margin = c(0.13, 0.13, 0.13, 0.13))  # ??????????????????
+
+chordDiagram(n_mobility_region, directional = TRUE,grid.col=region_color,
+                          link.lwd = 0.5, link.lty = 1, link.border = "white",
+             annotationTrack = "grid",
+             link.sort=TRUE,
+             link.decreasing=TRUE,
+              direction.type = c("diffHeight", "arrows"),
+    link.arr.type = "big.arrow",
+    transparency = 0.3)
+
+mtext("Mobility flows", side = 3, line =-0.4, font = 1, cex = 1.5)
+for(si in get.all.sector.index()) {
+  circos.axis(
+              major.at = c(0,100000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,1100000,1200000,1300000,1400000),
+              labels =c(0,"0.1M","0.2M","0.3M","0.4M","0.5M","0.6M","0.7M","0.8M","0.9M","1M","1.1M","1.2M","1.3M","1.4M"),
+              minor.ticks = 9,
+              labels.cex = fontsize(7),
+              sector.index = si
+            )
+  xlim = get.cell.meta.data("xlim", sector.index = si, track.index = 1)
+  ylim = get.cell.meta.data("ylim", sector.index = si, track.index = 1)
+  if (si == "Latin America & Caribbean"){
+                circos.text(mean(xlim)-10000,
+                3.5,
+                "Latin America\n& Caribbean",
+                sector.index = si,
+                track.index = 1,
+                niceFacing = TRUE,
+                cex = 0.7,
+                col = "black")}
+  else if(si=="Middle East & North Africa"){
+                circos.text(mean(xlim),
+               3.5,
+                "Middle East\n& North Africa",
+                sector.index = si,
+                track.index = 1,
+                niceFacing = TRUE,
+                cex = 0.7,
+                col = "black" )}
+  else if(si=="South Asia"){
+                circos.text(mean(xlim),
+                3.5,
+               "South\nAsia",
+                sector.index = si,
+                track.index = 1,
+                niceFacing = TRUE,
+                cex = 0.7,
+                col = "black" )}
+   else if(si=="Sub-Saharan Africa"){
+                circos.text(mean(xlim),
+                3.5,
+               "Sub-Saharan\nAfrica",
+                sector.index = si,
+                track.index = 1,
+                niceFacing = TRUE,
+                cex =0.7,
+                col = "black" )}
+  else {  circos.text(mean(xlim),
+                3.5,
+                si,
+                sector.index = si,
+                track.index = 1,
+                niceFacing = TRUE,
+                cex =  0.7,
+                col = "black")}
+}
+
+# 7.3. Draw collaboration chord diagram 
+
+circos.clear()
+circos.par(gap.after = 8,  # ?????????????????????????????????
+           track.height = 0.01,  # ?????????????????????
+           circle.margin = c(0.13, 0.13, 0.13, 0.13))  # ??????????????????
+
+chordDiagram(n_collaboration_region, directional = TRUE,grid.col=region_color,
+                          link.lwd = 0.5, link.lty = 1, link.border = "white",
+             annotationTrack = "grid",
+             #annotationTrack = "name", 
+             #annotationTrackHeight = 0.05, 
+             #grid =list( fontsize = 12,fontfamily="Arial")
+             link.sort=TRUE,
+             link.decreasing=TRUE,
+              direction.type = c("diffHeight", "arrows"),
+    link.arr.type = "big.arrow",
+    transparency = 0.3)
+
+mtext("Collaboration flows", side = 3, line =-0.4, font = 1, cex = 1.5)
+for(si in get.all.sector.index()) {
+  circos.axis(
+               major.at = c(0,1000000,2000000,3000000,4000000,5000000,6000000,7000000,8000000,9000000,10000000,11000000,12000000,13000000,14000000),
+              labels =c(0,"1M","2M","3M","4M","5M","6M","7M","8M","9M","10M","11M","12M","13M","14M"),
+              minor.ticks = 9,
+              labels.cex = fontsize(7),
+              sector.index = si
+             # track.index = 1,
+             # labels.niceFacing = TRUE
+            )
+  xlim = get.cell.meta.data("xlim", sector.index = si, track.index = 1)
+  ylim = get.cell.meta.data("ylim", sector.index = si, track.index = 1)
+  if (si == "Latin America & Caribbean"){
+                circos.text(mean(xlim)-300000,
+                3.5,
+                "Latin America\n& Caribbean",
+                sector.index = si,
+                track.index = 1,
+                niceFacing = TRUE,
+                cex = 0.7,
+                col = "black")}
+  else if(si=="Middle East & North Africa"){
+                circos.text(mean(xlim),
+                3.5,
+                "Middle East\n& North Africa",
+                sector.index = si,
+                track.index = 1,
+                niceFacing = TRUE,
+                cex = 0.7,
+                col = "black" )}
+  else if(si=="South Asia"){
+                circos.text(mean(xlim),
+                3.5,
+               "South\nAsia",
+                sector.index = si,
+                track.index = 1,
+                niceFacing = TRUE,
+                cex = 0.7,
+                col = "black" )}
+   else if(si=="Sub-Saharan Africa"){
+                circos.text(mean(xlim)+100000,
+                3.5,
+               "Sub-Saharan\nAfrica",
+                sector.index = si,
+                track.index = 1,
+                niceFacing = TRUE,
+                cex =0.7,
+                col = "black" )}
+  else {  circos.text(mean(xlim),
+                3.5,
+                si,
+                sector.index = si,
+                track.index = 1,
+                niceFacing = TRUE,
+                cex =  0.7,
+                col = "black")}
+
+  }
+
+dev.off( )
+
+gini_coll_origin_region
+gini_mobi_origin_region
+
+gini_coll 
+gini_mobi
+```
+
+
+```{r}
+# 1. Define region labels and abbreviations once for reuse
+region_levels <- c("East Asia & Pacific", "Europe & Central Asia", "Latin America & Caribbean",
+                   "Middle East & North Africa", "North America", "South Asia", "Sub-Saharan Africa")
+region_labels <- c("EAP", "ECA", "LAC", "MENA", "NA", "SA", "SSA")
+
+# 2. Convert region names to factor levels with abbreviations
+
+mobi_rate_pair_region_no_NA<- mobi_rate_pair %>%
+  filter(region_origin != '#N/A' & region_destination != '#N/A')
+
+
+mobi_rate_pair_region_no_NA <- mobi_rate_pair_region_no_NA %>%
+  mutate(
+    region_origin = factor(region_origin, levels = region_levels, labels = region_labels),
+    region_destination = factor(region_destination, levels = region_levels, labels = region_labels),
+  )
+
+# 3. Calculate average mobility rates between each origin–destination region pair
+CMRot_region <- mobi_rate_pair_region_no_NA  %>%
+  group_by(region_origin, region_destination) %>%
+  summarise(
+    avg_CMRot = mean(CMRot, na.rm = TRUE),
+    avg_MRot_all = mean(MRot_all, na.rm = TRUE),
+    avg_MRot_nc = mean(MRot_nc, na.rm = TRUE),
+    avg_MRot_c = mean(MRot_c, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# 4. Reshape from wide to long format for plotting
+CMRot_region_long <- CMRot_region %>%
+  pivot_longer(cols = starts_with("avg_MRot"), 
+               names_to = "variable", 
+               values_to = "value")
+
+# View output
+CMRot_region_long
+
+
+```
+
+
+```{r}
+
+# 5. Plot: Line chart of mobility rates by destination region, faceted by origin
+
+plot_MRotnc_region<-ggplot(CMRot_region_long, aes(x = factor(region_destination), y = value, color = variable)) +
+  geom_line(aes(group = variable), size = 4) +
+  geom_point(size = 4) +
+  scale_color_manual(
+    values = c("avg_MRot_nc" = "#d62728", "avg_MRot_c" = "#1f77b4", "avg_MRot_all" = "#2ca02c"),
+    labels = c("avg_MRot_nc" = "ave. MRot_nc", "avg_MRot_c" = "ave. MRot_c", "avg_MRot_all" = "ave. MRot_all")
+  ) +
+  scale_y_continuous(
+    name = "Region of origin country", limits = c(0, 0.11), expand = c(0, 0), breaks = c(0, 0.02, 0.04, 0.06, 0.08, 0.1),
+    labels = c("0", "", "", "0.6", "", "")
+  ) +
+  facet_grid(rows = vars(region_origin), scales = "free_y", switch = "y") +  # ??????????????????facet,????????????????????????
+  labs(x = "Region of destination country") +
+  guides(
+    color = guide_legend(title = NULL, nrow = 1)
+  ) +
+  theme_bw() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA, size = 1.5),  # ????????????
+    panel.spacing = unit(0.5, "lines"),  # ???????????????????????????
+    plot.title.position = "plot",
+    plot.title = element_text(hjust = 0.02, vjust = 0, size = 80, face = "bold", color = "black"),
+    axis.ticks = element_line(size = 1.5),
+    axis.ticks.length = unit(0.5, "cm"),
+    axis.line = element_line(size = 1.5),
+    axis.text.y = element_text(size = 50),
+    axis.text.x = element_text(size = 50),
+    axis.title = element_text(size = 50),
+    axis.title.x = element_text(size = 50, margin = margin(10, 0, 0, 0)),
+    axis.title.y = element_text(size = 50, margin = margin(0, 10, 0, 0)),
+    axis.title.y.right = element_text(margin = margin(l = 10)),
+    legend.text = element_text(size = 50, face = "plain"),
+    legend.title = element_text(size = 50, face = "plain"),
+    legend.position = "bottom",
+    strip.text.y = element_text(size = 50, angle = 180, hjust = 0.5),  # ????????????
+    strip.background = element_blank(),
+    strip.placement = "outside"
+  ) 
+
+# 6. Plot: Bar chart of average CMRot by origin, faceted by destination
+
+plot_CMRot_region<-ggplot(CMRot_region, aes(x = factor(region_origin, levels = c("SSA", "SA", "NA", "MENA","LAC","ECA", "EAP")))) +
+  geom_bar(aes(y = avg_CMRot, fill = region_origin), stat = "identity", position = position_dodge(width = 0.8)) +
+ geom_text(aes(y = avg_CMRot, 
+                label = round(avg_CMRot, 0), 
+               hjust = ifelse(avg_CMRot < 700, -0.4, 1.1)), 
+
+             size = 15) +  
+  scale_y_continuous(breaks = seq(0, 730, by = 200),  
+                     labels = c("0",  "", "400", "")) + 
+  scale_fill_manual(values = c( 
+    "EAP" = "#1f77b4",
+    "ECA" = "#ff7f0e",
+    "LAC" = "#2ca02c",
+    "MENA" = "#d62728",
+    "NA" = "#9467bd",
+    "SA" = "#8c564b",
+    "SSA" = "#e377c2")) +
+facet_grid(. ~ region_destination, scales = "free_y", space = "free_x"  , switch = "y" ) +  
+
+  coord_flip() +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(), # ????????????
+    plot.title.position = "plot",  # ????????????????????????
+    plot.title = element_text(hjust = 0.02, vjust = 0, size = 80, face = "bold", color = "black"),
+    plot.subtitle = element_text(hjust = 0.5, size = 50), 
+    axis.ticks = element_line(size = 1.5), # ?????????????????????
+    axis.ticks.length = unit(0.5, "cm"),
+    axis.line = element_line(size = 1.5), # ??????????????????
+    axis.text = element_text(size = 50),
+    axis.title = element_text(size = 50),
+    axis.title.x = element_text(size = 50, margin = margin(20, 0, 0, 0)),
+    axis.title.y = element_text(size = 50, margin = margin(0, 20, 0, 0)),
+    axis.title.y.right = element_text(margin = margin(l = 20)),
+    legend.position = "none",
+    strip.text = element_text(size = 50, hjust = 0.5),  
+    strip.background = element_blank() 
+  )+
+  xlab("Region of origin country") +  
+  ylab("Average CMRot") +
+  labs(subtitle = "Region group of destination country") 
+
+# 7. Combine both plots side by side and save to file
+grid_layout <- rbind(
+  c(1, 1,  2, 2),
+  c(1, 1,  2, 2)
+)
+
+
+png(file="C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Fig QSS9--mobility rate_2023.png", width=3000,height=1500) 
+
+grid.arrange(plot_MRotnc_region,plot_CMRot_region, layout_matrix = grid_layout)
+
+dev.off()
+
+```
+
+
+```{r}
+# 1. Remove rows with missing income group data
+mobi_rate_pair_income_no_NA <- mobi_rate_pair %>%
+  filter(income_origin != '#N/A' & income_destination != '#N/A')
+
+# 2. Aggregate mobility and collaboration numbers by income group pairs
+
+mobi_coll_income<- mobi_rate_pair_income_no_NA %>%
+  group_by(income_origin, income_destination) %>%
+  summarise(
+    sum_mobi = sum(r_mobi, na.rm = TRUE),
+    sum_coll = sum(r_coll, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+gini_coll_origin_income <- mobi_coll_income  %>%
+  group_by(income_origin) %>%
+  summarise(
+    gini_coll = ineq::Gini(sum_coll)
+  )
+
+gini_mobi_origin_income  <- mobi_coll_income  %>%
+  group_by(income_origin) %>%
+  summarise(
+    gini_mobi = ineq::Gini(sum_mobi)
+  )
+
+
+mobi_coll_income  %>%
+  group_by(income_destination) %>%
+  summarise(
+    gini_coll = ineq::Gini(sum_coll)
+  )
+
+mobi_coll_income  %>%
+  group_by(income_destination) %>%
+  summarise(
+    gini_mobi = ineq::Gini(sum_mobi)
+  )
+
+# 3. Compute Gini coefficients to assess distribution inequality
+gini_coll_income <- ineq::Gini(mobi_coll_income$sum_coll)
+gini_mobi_income <- ineq::Gini(mobi_coll_income$sum_mobi)
+
+# 4. Define income group colors
+income_color<-c("High"="#1F77B4", 
+                   "Upper middle"="#FF7F0E", 
+                   "Lower middle"="#2CA02C", 
+                   "Low"="#D62728")
+# 5. Extract mobility data: income group-to-income group mobility counts only
+
+n_mobility_income<-mobi_coll_income[,c("income_origin","income_destination","sum_mobi")] 
+
+# 6. Extract mobility data: income group-to-income group collaboration counts only
+
+n_collaboration_income<-mobi_coll_income[,c("income_origin","income_destination","sum_coll")] 
+
+# 7. Draw mobility and collaboration chord diagram across income group
+png(file="C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Fig QSS--A4--mobility and collaboration--chord diagram between income.png", width=3300,height=1600,res=300)
+
+# 7.1.  Set 2-panel layout: one for mobility, one for collaboration
+par(mfrow=c(1,2))
+
+# 7.2 Draw directional mobility chord diagram
+circos.clear()
+circos.par(gap.after = 8,  # ?????????????????????????????????
+           track.height = 0.01,  # ?????????????????????
+           circle.margin = c(0.13, 0.13, 0.13, 0.13))  # ??????????????????
+
+chordDiagram(n_mobility_income, directional = TRUE,grid.col=income_color,
+                          link.lwd = 0.5, link.lty = 1, link.border = "white",
+             annotationTrack = "grid",
+             #annotationTrack = "name", 
+             #annotationTrackHeight = 0.05, 
+             #grid =list( fontsize = 12,fontfamily="Arial")
+             link.sort=TRUE,
+             link.decreasing=TRUE,
+              direction.type = c("diffHeight", "arrows"),
+    link.arr.type = "big.arrow",
+    transparency = 0.3)
+
+mtext("Mobility flows", side = 3, line =-0.4, font = 1, cex = 1.5)
+for(si in get.all.sector.index()) {
+  circos.axis(
+              major.at = c(0,100000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,1100000,1200000,1300000,1400000,1500000,1600000,1700000,1800000,1900000,2000000,2100000,2200000,2300000,2400000),
+              labels =c(0,"0.1M","0.2M","0.3M","0.4M","0.5M","0.6M","0.7M","0.8M","0.9M","1M","1.1M","1.2M","1.3M","1.4M","1.5M","1.6M","1.7M","1.8M","1.9M","2.0M","2.1M","2.2M","2.3M","2.4M"),
+              minor.ticks = 9,
+              labels.cex = fontsize(7),
+              sector.index = si
+             # track.index = 1,
+             # labels.niceFacing = TRUE
+            )
+  xlim = get.cell.meta.data("xlim", sector.index = si, track.index = 1)
+  ylim = get.cell.meta.data("ylim", sector.index = si, track.index = 1)
+  circos.text(mean(xlim),
+                3.5,
+                si,
+                sector.index = si,
+                track.index = 1,
+                niceFacing = TRUE,
+                cex =  0.7,
+                col = "black")
+}
+
+# 7.3. Draw directional collaboration chord diagram                
+circos.clear()
+circos.par(gap.after = 8,  # ?????????????????????????????????
+           track.height = 0.01,  # ?????????????????????
+           circle.margin = c(0.13, 0.13, 0.13, 0.13))  # ??????????????????
+
+chordDiagram(n_collaboration_income, directional = TRUE,grid.col=income_color,
+                          link.lwd = 0.5, link.lty = 1, link.border = "white",
+             annotationTrack = "grid",
+             #annotationTrack = "name", 
+             #annotationTrackHeight = 0.05, 
+             #grid =list( fontsize = 12,fontfamily="Arial")
+             link.sort=TRUE,
+             link.decreasing=TRUE,
+              direction.type = c("diffHeight", "arrows"),
+    link.arr.type = "big.arrow",
+    transparency = 0.3)
+
+mtext("Collaboration flows", side = 3, line =-0.4, font = 1, cex = 1.5)
+for(si in get.all.sector.index()) {
+  circos.axis(
+               major.at = c(0,1000000,2000000,3000000,4000000,5000000,6000000,7000000,8000000,9000000,10000000,11000000,12000000,13000000,14000000,15000000,16000000,17000000,18000000,19000000),
+              labels =c(0,"1M","2M","3M","4M","5M","6M","7M","8M","9M","10M","11M","12M","13M","14M","15M","16M","17M","18M","19M"),
+              minor.ticks = 9,
+              labels.cex = fontsize(7),
+              sector.index = si
+             # track.index = 1,
+             # labels.niceFacing = TRUE
+            )
+  xlim = get.cell.meta.data("xlim", sector.index = si, track.index = 1)
+  ylim = get.cell.meta.data("ylim", sector.index = si, track.index = 1)
+    circos.text(mean(xlim),
+                3.5,
+                si,
+                sector.index = si,
+                track.index = 1,
+                niceFacing = TRUE,
+                cex =  0.7,
+                col = "black")
+
+  }
+
+dev.off( )
+
+
+gini_mobi_origin_income 
+gini_coll_origin_income 
+
+gini_coll_income
+gini_mobi_income
+```
+
+
+
+```{r}
+# 1. Define income group labels and abbreviations
+income_levels<-c("High", "Upper middle", "Lower middle", "Low")
+income_labels= c("H", "UM", "LM", "L")
+
+# 2. Convert income group names to factor levels with abbreviations
+mobi_rate_pair_income_no_NA <- mobi_rate_pair_income_no_NA  %>%
+    mutate(
+   income_origin = factor( income_origin, levels =  income_levels, labels =  income_labels),
+    income_destination = factor( income_destination, levels =  income_levels, labels =  income_labels),
+    origin_destination = paste(income_origin, income_destination, sep = "")  # Create origin-destination combined identifier
+  )
+
+# 3. Calculate average mobility rates between each origin–destination income group pair
+CMRot_income <- mobi_rate_pair_income_no_NA %>%
+  group_by(income_origin, income_destination) %>%
+  summarise(
+    avg_CMRot = mean(CMRot, na.rm = TRUE),
+    avg_MRot_all = mean(MRot_all, na.rm = TRUE),
+    avg_MRot_nc = mean(MRot_nc, na.rm = TRUE),
+    avg_MRot_c = mean(MRot_c, na.rm = TRUE),
+     .groups = "drop"
+  )
+
+# 4. Reshape from wide to long format for plotting
+CMRot_income_long <- CMRot_income %>%
+  pivot_longer(cols = starts_with("avg_MRot"), 
+               names_to = "variable", 
+               values_to = "value")
+
+# 5. Line chart of three mobility rates by income group of destination, faceted by income group of origin
+
+
+plot_MRotnc_income<-ggplot(CMRot_income_long,  aes(x = factor(income_destination), y = value, color = variable)) +
+  geom_line(aes(group = variable), size = 4) +
+  geom_point(size = 4) +
+  scale_color_manual(
+    values = c("avg_MRot_nc" = "#d62728", "avg_MRot_c" = "#1f77b4", "avg_MRot_all" = "#2ca02c"),
+    labels = c("avg_MRot_nc" = "ave. MRot_nc", "avg_MRot_c" = "ave. MRot_c", "avg_MRot_all" = "ave. MRot_all")
+  ) +
+  scale_y_continuous(
+    name = "Income group of origin country", limits = c(0, 0.11), expand = c(0, 0), breaks = c(0, 0.02, 0.04, 0.06, 0.08, 0.1),
+    labels = c("0", "", "", "0.6", "", "")
+  ) +
+  facet_grid(rows = vars(income_origin), scales = "free_y", switch = "y") +  # 
+  labs(x = "Income group of destination country") +
+  guides(
+    color = guide_legend(title = NULL, nrow = 1)
+  ) +
+  theme_bw() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA, size = 1.5),  # ????????????
+    panel.spacing = unit(0.5, "lines"),  # ???????????????????????????
+    plot.title.position = "plot",
+    plot.title = element_text(hjust = 0.02, vjust = 0, size = 80, face = "bold", color = "black"),
+    
+    axis.ticks = element_line(size = 1.5),
+    axis.ticks.length = unit(0.5, "cm"),
+    axis.line = element_line(size = 1.5),
+    axis.text.y = element_text(size = 50),
+    axis.text.x = element_text(size = 50),
+    axis.title = element_text(size = 50),
+    axis.title.x = element_text(size = 50, margin = margin(10, 0, 0, 0)),
+    axis.title.y = element_text(size = 50, margin = margin(0, 10, 0, 0)),
+    axis.title.y.right = element_text(margin = margin(l = 10)),
+    legend.text = element_text(size = 50, face = "plain"),
+    legend.title = element_text(size = 50, face = "plain"),
+    legend.position = "bottom",
+    strip.text.y = element_text(size = 50, angle = 180, hjust = 0.5),  
+    strip.background = element_blank(),
+    strip.placement = "outside"
+  )
+
+# 6. Bar chart of average CMRot by income group of destination, faceted by income group of origin
+
+plot_CMRot_income<-ggplot(CMRot_income, aes(x = factor(income_origin, levels = c("L", "LM", "UM", "H"),labels=c("L", "LM", "UM","H")))) +
+  geom_bar(aes(y = avg_CMRot, fill = income_origin), stat = "identity", position = position_dodge(width = 0.8)) +
+ geom_text(aes(y = avg_CMRot, 
+                label = round(avg_CMRot, 0), 
+                #vjust = ifelse(CMRot < 700, 0, 0),
+               hjust = ifelse(avg_CMRot < 500, -0.4, 1.1)), # ??????CMRot????????????vjust
+           #
+             size = 15) +  # ????????????bar??????nudge_y
+  scale_fill_manual(values = c( 
+    "H" = "#1f77b4",
+    "UM" = "#ff7f0e",
+    "LM"= "#2ca02c",
+    "L" = "#d62728")) +
+facet_grid(. ~ income_destination, scales = "free_y", space = "free_x", switch = "y"
+           ) +  # ??????????????????
+ scale_y_continuous(limits = c(0, 580), breaks = c(0, 200, 400)) +
+  coord_flip() + 
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(), # ????????????
+    plot.title.position = "plot",  # ????????????????????????
+    plot.title = element_text(hjust = 0.02, vjust = 0, size = 80, face = "bold", color = "black"),
+    plot.subtitle = element_text(hjust = 0.5, size = 50), 
+    axis.ticks = element_line(size = 1.5), # ?????????????????????
+    axis.ticks.length = unit(0.5, "cm"),
+    axis.line = element_line(size = 1.5), # ??????????????????
+    axis.text = element_text(size = 50),
+    axis.title = element_text(size = 50),
+    axis.title.x = element_text(size = 50, margin = margin(10, 0, 0, 0)),
+    axis.title.y = element_text(size = 50, margin = margin(0, 20, 0, 0)),
+    axis.title.y.right = element_text(margin = margin(l = 20)),
+    legend.position = "none",
+    strip.text = element_text(size = 50, hjust = 0.5),  # ????????????????????????
+    strip.background = element_blank()  # ????????????????????????
+    
+  )+
+xlab("Income group of origin country") +  # ?????? x ?????????
+  ylab("Average CMRot") + # ?????? y ?????????
+  labs(subtitle = "Income group of destination country") 
+
+
+# 7. Combine both plots side by side and save to file
+grid_layout <- rbind(
+  c(1, 1,  2, 2),
+  c(1, 1,  2, 2)
+)
+
+png(file="C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Fig QSS10--mobility rate_2023.png", width=3000,height=1500) 
+
+grid.arrange(plot_MRotnc_income,plot_CMRot_income, layout_matrix = grid_layout)
+
+dev.off()
+
+
+```
