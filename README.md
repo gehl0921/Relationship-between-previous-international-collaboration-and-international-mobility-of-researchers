@@ -8,27 +8,29 @@ This repository provides data, R scripts, and figures for analyzing the relation
 ## Repository Structure
 
 .
-├── section 1/
-│ ├── n of researchers--first year.csv
-│ ├── mobility rate--country--2023--more than 500.csv
-│ ├── Fig QSS1--first year--researchers_2023.png
-│ ├── Fig QSS2--visualization.png
-│ ├── Fig QSS3--mobility ratio--country level 2019.png
-│ ├── Fig QSS4--Top15.png
-│ ├── Fig QSS5--mobility rate_2023.png
-│ ├── Fig QSS--A1--world map--CMR_o--2023.png
-│ ├── Fig QSS--A2--mobility rate--region and income.png
-│ └── section 1-prior international collaboration and international mobility.R
-├── section 2/
-│ ├── mobility ratio--origin and destination from--more than 100--1990-2019_2023.csv
-│ ├── Gini index.xcel
-│ ├── Fig QSS--A3--mobility and collaboration--chord diagram between regions.png
-│ ├── Fig QSS--A4--mobility and collaboration--chord diagram between income.png
-│ ├── Fig QSS7--mobility rate--origin and detinaiton.png
-│ ├── Fig QSS8--countries--mobility rate--origin and detinaiton_2023.png
-│ ├── Fig QSS10--mobility rate_2023.png
-│ └── section 2-prior international collaboration and international mobility.R
-├── README.md
+section 1/
+├── n of researchers--first year.csv
+├── mobility rate--country--2023--more than 500.csv
+├── Fig QSS1--first year--researchers_2023.png
+├── Fig QSS2--visualization.png
+├── Fig QSS3--mobility ratio--country level 2019.png
+├── Fig QSS4--Top15.png
+├── Fig QSS5--mobility rate_2023.png
+├── Fig QSS--A1--world map--CMR_o--2023.png
+├── Fig QSS--A2--mobility rate--region and income.png
+└── section 1-prior international collaboration and international mobility.R
+
+section 2/
+├── mobility ratio--origin and destination from--more than 100--1990-2019_2023.csv
+├── Gini index.xcel
+├── Fig QSS--A3--mobility and collaboration--chord diagram between regions.png
+├── Fig QSS--A4--mobility and collaboration--chord diagram between income.png
+├── Fig QSS7--mobility rate--origin and detinaiton.png
+├── Fig QSS8--countries--mobility rate--origin and detinaiton_2023.png
+├── Fig QSS10--mobility rate_2023.png
+└── section 2-prior international collaboration and international mobility.R
+
+README.md
 
 ---
 
