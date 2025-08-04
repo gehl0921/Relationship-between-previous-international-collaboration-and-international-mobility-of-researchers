@@ -10,7 +10,7 @@ This repository provides data, R scripts, and figures for analyzing the relation
 Section 1/
 -  n of researchers--first year.csv
 -  mobility rate--country--2023--more than 500.csv
--  section 1-prior international collaboration and international mobility.R
+-  Script--section 1.Rmd
 -  Fig QSS1--first year--researchers_2023.png
 -  Fig QSS2--visualization.png
 -  Fig QSS3--mobility ratio--country level 2019.png
@@ -23,7 +23,7 @@ Section 1/
 Section 2/
 -  mobility ratio--origin and destination from--more than 100--1990-2019_2023.csv
 -  Gini index.xlsx
--  section 2-prior international collaboration and international mobility.R
+-  Script--section 2.Rmd
 -  Fig QSS6--top 3 destination and collaboration
 -  Fig QSS7--mobility rate--origin and detinaiton.png
 -  Fig QSS8--countries--mobility rate--origin and detinaiton_2023.png
@@ -51,7 +51,7 @@ README.md
 
 **Script**
 
-- `section 1-prior international collaboration and international mobility.R`  
+- `Script--section 1.Rmd`  
   R script for data processing, analysis, and visualization for Section 1.
 
 **Figures**
@@ -91,7 +91,7 @@ README.md
 
 **Script**
 
-- `section 2-prior international collaboration and international mobility.R`  
+- `Script--section 2.Rmd`  
   R script for all data processing and visualization in Section 2.
 
 **Figures**
