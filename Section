@@ -1,1 +1,3 @@
-Section 1
+git rm 路径/文件名
+git commit -m "Relationship-between-previous-international-collaboration-and-international-mobility-of-researchers/Section 1"
+git push
