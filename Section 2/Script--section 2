@@ -1,5 +1,5 @@
 ---
-title: "sec 2-International collaboration shapes"
+title: "sec 2-The relationship between prior international collaboration and mobility: global patterns across regions and income groups"
 output: html_document
 date: "2025-07-03"
 ---
@@ -20,7 +20,8 @@ library(patchwork)
 ```
 
 ```{r}
-mobi_rate_pair <-read.csv("//VUW/Personal$/Homes/G/geh1/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/mobility ratio--origin and destination from--more than 100--1990-2019_2023.csv") 
+# Read country pair-level mobility data (with more than 100 mobile researchers) from CSV file
+mobi_rate_pair <-read.csv("mobility ratio--origin and destination from--more than 100--1990-2019_2023.csv") 
 ```
 
 
@@ -125,6 +126,7 @@ plot_list <- lapply(origin_list, plot_origin)
 # Assemble 3x5 panel of plots using patchwork
 final_plot <- wrap_plots(plotlist = plot_list, nrow = 3, ncol = 5, guides = "collect") 
 
+
 # Create a separate legend plot (only for destination colors)
 plot_legend <- ggplot(df_top3_long, aes(
   x = factor(prop_type, levels = c("prop_coll", "prop_mobi"), labels = c("IC", "IM")),
@@ -145,14 +147,18 @@ plot_legend <- ggplot(df_top3_long, aes(
 # Extract legend only
 legend_shared <- cowplot::get_legend(plot_legend)
 
+
+#Draw Fig. 7 
 # Combine 15 plots with extracted legend
-png(file="C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Fig QSS6--top 3 destination and collaboration.png", width=2000,height=1500)
+png(file="Fig QSS6--top 3 destination and collaboration.png", width=2000,height=1500)
 cowplot::plot_grid(final_plot, legend_shared, ncol = 1, rel_heights = c(1, 0.1))
 dev.off()
 ```
 
 
 ```{r}
+# Define 15 country pairs with most mobile researchers
+
 mobility_pair_15<-
   c(
 "CN-US",
@@ -171,6 +177,7 @@ mobility_pair_15<-
 "BR-US",
 "US-KR")
 
+# Define a color for each country pair
 color <- c(
      "#1f77b4",
      "#ff7f0e",
@@ -188,9 +195,11 @@ color <- c(
      "#ff9896",
      "#008080")
 
+# Create a data frame with style info (color and shape) for each pair
 pair_style <- data.frame(mobility_pair_15, color)
-pair_style$shape <- 16
- 
+pair_style$shape <- 15
+
+# Merge style info into the pair-level mobility data
 mobi_rate_pair  <-
   merge(mobi_rate_pair,
         pair_style,
@@ -198,23 +207,27 @@ mobi_rate_pair  <-
         by.y = "mobility_pair_15",
         all.x = TRUE)
  
-
+# Assign default color and shape if a pair is not in the defined list
 mobi_rate_pair $color[is.na(mobi_rate_pair $color)] <- "#6c757d"
 mobi_rate_pair $shape[is.na(mobi_rate_pair $shape)] <- 1
  
-
+# Set point size for plotting based on 'r_mobi'
 mobi_rate_pair $size <- mobi_rate_pair $r_mobi / 100
 
-mobi_rate_pair $size[mobi_rate_pair $size < 10] <- 6
+mobi_rate_pair $size[mobi_rate_pair $size < 10] <- 5
 
 ```
 
 
 ```{r}
-png(file="C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Fig QSS7--mobility rate--origin and detinaiton.png", width=1500,height=1500)
- 
+
+# Save the scatter plot (Fig. 7) as a PNG image
+png(file="Fig QSS7--mobility rate--origin and detinaiton.png", width=1500,height=1500)
+
+# Arrange pair data by shape and r_mobi, and scale point sizes for the plot
 mobi_rate_pair_pair <-mobi_rate_pair  %>% arrange(shape, desc(r_mobi)) %>% mutate(size_scale =scales::rescale(size, to = c(5, 50))) %>% arrange((order)) 
 
+# Create the scatter plot
 ggplot(mobi_rate_pair_pair,
            aes(x = MRot_nc, y = MRot_c)) +
     xlim(0, 0.15) +
@@ -222,6 +235,7 @@ ggplot(mobi_rate_pair_pair,
     labs(x = "MRot_nc") +
     labs(y = "MRot_c") +
 
+# Add reference line y = x
     geom_abline(
       intercept = 0,
       slope = 1,
@@ -229,14 +243,6 @@ ggplot(mobi_rate_pair_pair,
       color = "#dde5b6",
       size = 1
     ) +
-   # geom_smooth(
-   #   formula = y ~ x,
-  #    method = "lm",
-  #    linetype = 1,
-  #    size = 1.2,
-  #    fullrange = TRUE,
-  #    color = "#98c1d9"
-  #  ) +
     geom_vline(
       xintercept = median(mobi_rate_pair_pair$ MRot_nc),
       linetype = "dashed",
@@ -249,14 +255,13 @@ ggplot(mobi_rate_pair_pair,
       color = "grey",
       size = 1.2
     ) +
+# Add scatter points for each pair
       geom_point(
       colour = mobi_rate_pair_pair$color,
       size = mobi_rate_pair_pair$size_scale,
-      #size = mobi_rate_pair_p$size,
       shape = mobi_rate_pair_pair$shape
     )+
-    #geom_abline(intercept = round(coeff[1],1), slope = round(coeff[2],1), color="blue",
-    #            linetype="dotted", size=1.2)+
+# Add labels for selected large points and specific pairs
     geom_text_repel(aes(label=ifelse(mobi_rate_pair_pair$size_scale>13.65 & mobi_rate_pair_pair$mobility_pair!="US-CA" &
                                        mobi_rate_pair_pair$mobility_pair!="US-KR" &
                                        mobi_rate_pair_pair$mobility_pair!="US-UK" 
@@ -265,6 +270,8 @@ ggplot(mobi_rate_pair_pair,
                                      & mobi_rate_pair_pair$mobility_pair!="DE-US"
                                      ,as.character(mobi_rate_pair_pair$mobility_pair),'')),hjust=0.5,
               vjust=0.5,size=8)+
+# Add labels for specific pairs at custom positions
+
     geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "US-CA", 
                                    "US-CA", '')),  hjust = 0, vjust = 1, size = 8)+
     geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "US-KR", 
@@ -281,9 +288,6 @@ ggplot(mobi_rate_pair_pair,
                                    "UK-US", '')),  hjust =0, vjust = 1, size = 8)+
    geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "DE-US", 
                                    "DE-US", '')),  hjust =0.5, vjust = 0, size = 8)+
-  
-
-   # geom_text(aes(label=ifelse(mobi_rate_pair_p$size_scale>10,as.character(mobi_rate_pair_p$mobility_pair),'')),hjust=0,vjust=0,size=10)+
     scale_size(range = c(0, 15)) +
     theme_bw() +
     theme(
@@ -292,30 +296,35 @@ ggplot(mobi_rate_pair_pair,
       axis.title.x = element_text(size = 40,margin=margin(20,0,0,0)),
       axis.title.y = element_text(size = 40,margin=margin(0,20,0,0))
       )
-    
-#,country=iso2,size=size_scale,show.legend = FALSE
-dev.off()
+
+dev.off() # Finish and save the image
 ```
 
 
 ```{r}
-country_level<-c("NL",	"FR",	"IT",	"AU",	"DE",	"UK",	"US",	"CA",	"ES",	"BR"	,"IN"	,"KR","RU","JP","CN")
-
+# Filter pair-level data for pairs where both origin and destination are in the top 15 countries
 mobility_rate_pair_15 <- mobi_rate_pair[mobi_rate_pair$origin %in% country_15 & mobi_rate_pair$destination %in% country_15, ]
 
+# Select only origin, destination, and CMR_ot columns
 CMRot_15 <- mobility_rate_pair_15[, c('origin', 'destination', 'CMR_ot')]
 
+# Calculate the median value of CMR_ot for these pairs
 median_CMRot_15 <- median(CMRot_15 $CMR_ot, na.rm = TRUE)
 
+# Define the order of 15 countries
+country_level<-c("NL",	"FR",	"IT",	"AU",	"DE",	"UK",	"US",	"CA",	"ES",	"BR"	,"IN"	,"KR","RU","JP","CN")
 
+# Set the factor levels to ensure correct ordering in plots/matrices
 CMRot_15$origin <- factor(CMRot_15$origin,levels = country_level)
-
 CMRot_15$destination <- factor(CMRot_15$destination,levels = country_level)
 
 ```
 
 ```{r}
-png(file="C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Fig QSS8--countries--mobility rate--origin and detinaiton_2023.png", width=1500,height=1400)
+# Save the heatmap (Fig. 8) as a PNG image
+png(file="Fig QSS8--countries--mobility rate--origin and detinaiton_2023.png", width=1500,height=1400)
+
+# Plot heatmap of CMR_ot values between country pairs (origin and destination)
 ggplot(CMRot_15, aes(x = destination, y = origin, fill = CMR_ot)) +
   geom_tile(color = "white") +
   geom_text(aes(label = round(CMR_ot, 1)), color = "black", size = 8, 
@@ -344,18 +353,18 @@ ggplot(CMRot_15, aes(x = destination, y = origin, fill = CMR_ot)) +
     legend.key.height = unit(2, "cm")  ,      
       legend.position = "right"
   )
-dev.off()
+dev.off() # Finish and save the image
 
 ```
 
 
 
 ```{r}
-# 1. Remove rows with missing region names
+# Remove rows with missing region information for both origin and destination
 mobi_rate_pair_region_no_NA<- mobi_rate_pair %>%
   filter(region_origin != '#N/A' & region_destination != '#N/A')
 
-# 2. Aggregate mobility and collaboration counts by origin-destination region pairs
+# Aggregate mobility and collaboration counts by origin-destination region pairs
 
 mobi_coll_region<- mobi_rate_pair_region_no_NA %>%
   group_by(region_origin, region_destination) %>%
@@ -365,37 +374,31 @@ mobi_coll_region<- mobi_rate_pair_region_no_NA %>%
     .groups = "drop"
   )
 
+# Calculate the Gini coefficient of collaboration counts for each region of origin
 gini_coll_origin_region <- mobi_coll_region %>%
   group_by(region_origin) %>%
   summarise(
     gini_coll = ineq::Gini(sum_coll)
   )
 
+# Calculate the Gini coefficient of mobility counts for each region of origin
 gini_mobi_origin_region <- mobi_coll_region %>%
   group_by(region_origin) %>%
   summarise(
     gini_mobi = ineq::Gini(sum_mobi)
   )
 
-mobi_coll_region %>%
-  group_by(region_destination) %>%
-  summarise(
-    gini_coll = ineq::Gini(sum_coll)
-  )
 
-mobi_coll_region %>%
-  group_by(region_destination) %>%
-  summarise(
-    gini_mobi = ineq::Gini(sum_mobi)
-  )
-
-# 3. Compute Gini coefficients to assess distribution inequality
+# Compute overall Gini coefficients for total collaboration and mobility across all regions
 gini_coll_region <- ineq::Gini(mobi_coll_region$sum_coll)
 #0.7486486
 gini_mobi_region <- ineq::Gini(mobi_coll_region$sum_mobi)
 #0.7265775
 
-# 4. define region color mapping (for plotting later)
+```
+
+```{r}
+# Define colors for each region (for chord diagrams)
 region_color<-c("East Asia & Pacific"="#1F77B4", 
                    "Europe & Central Asia"="#FF7F0E", 
                    "Latin America & Caribbean"="#2CA02C", 
@@ -404,20 +407,23 @@ region_color<-c("East Asia & Pacific"="#1F77B4",
                    "South Asia"= "#8c564b",
                    "Sub-Saharan Africa" = "#eeee00")
 
-# 5. Extract mobility data: region-to-region mobility counts only
+# Extract region-to-region mobility matrix (for chord diagram)
 n_mobility_region<-mobi_coll_region[,c("region_origin","region_destination","sum_mobi")] 
 
-# 6. Extract collaboration data: region-to-region collaboration counts only
+# Extract region-to-region collaboration matrix (for chord diagram)
 n_collaboration_region<-mobi_coll_region[,c("region_origin","region_destination","sum_coll")] 
 
-# 7. Draw mobility and collaboration chord diagram across regions
-png(file="C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Fig QSS--A3--mobility and collaboration--chord diagram between regions.png", width=3300,height=1600,res=300)
+```
 
-# 7.1.  Set 2-panel layout: one for mobility, one for collaboration
+```{r}
+# 7. Draw mobility and collaboration chord diagram (Fig. A3) across regions
+png(file="Fig QSS--A3--mobility and collaboration--chord diagram between regions.png", width=3300,height=1600,res=300)
+
+# Set up a 2-panel layout (left: mobility, right: collaboration)
 
 par(mfrow=c(1,2))
 
-# 7.2 Draw directional mobility chord diagram
+# Draw directional chord diagram for mobility flows between regions
 circos.clear()
 circos.par(gap.after = 8,  # ?????????????????????????????????
            track.height = 0.01,  # ?????????????????????
@@ -433,6 +439,8 @@ chordDiagram(n_mobility_region, directional = TRUE,grid.col=region_color,
     transparency = 0.3)
 
 mtext("Mobility flows", side = 3, line =-0.4, font = 1, cex = 1.5)
+
+# Add region labels to the mobility chord diagram
 for(si in get.all.sector.index()) {
   circos.axis(
               major.at = c(0,100000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,1100000,1200000,1300000,1400000),
@@ -443,6 +451,8 @@ for(si in get.all.sector.index()) {
             )
   xlim = get.cell.meta.data("xlim", sector.index = si, track.index = 1)
   ylim = get.cell.meta.data("ylim", sector.index = si, track.index = 1)
+
+# Custom region label placement
   if (si == "Latin America & Caribbean"){
                 circos.text(mean(xlim)-10000,
                 3.5,
@@ -489,7 +499,7 @@ for(si in get.all.sector.index()) {
                 col = "black")}
 }
 
-# 7.3. Draw collaboration chord diagram 
+# Draw directional chord diagram for collaboration flows between regions
 
 circos.clear()
 circos.par(gap.after = 8,  # ?????????????????????????????????
@@ -509,6 +519,8 @@ chordDiagram(n_collaboration_region, directional = TRUE,grid.col=region_color,
     transparency = 0.3)
 
 mtext("Collaboration flows", side = 3, line =-0.4, font = 1, cex = 1.5)
+
+# Add region labels to the collaboration chord diagram
 for(si in get.all.sector.index()) {
   circos.axis(
                major.at = c(0,1000000,2000000,3000000,4000000,5000000,6000000,7000000,8000000,9000000,10000000,11000000,12000000,13000000,14000000),
@@ -568,23 +580,17 @@ for(si in get.all.sector.index()) {
 
   }
 
-dev.off( )
-
-gini_coll_origin_region
-gini_mobi_origin_region
-
-gini_coll 
-gini_mobi
+dev.off( ) # Finish and save the image
 ```
 
 
 ```{r}
-# 1. Define region labels and abbreviations once for reuse
+# Define order of region and their abbreviations for plotting
 region_levels <- c("East Asia & Pacific", "Europe & Central Asia", "Latin America & Caribbean",
                    "Middle East & North Africa", "North America", "South Asia", "Sub-Saharan Africa")
 region_labels <- c("EAP", "ECA", "LAC", "MENA", "NA", "SA", "SSA")
 
-# 2. Convert region names to factor levels with abbreviations
+#Remove rows with missing region information, and convert region names to factors using abbreviations
 
 mobi_rate_pair_region_no_NA<- mobi_rate_pair %>%
   filter(region_origin != '#N/A' & region_destination != '#N/A')
@@ -596,7 +602,7 @@ mobi_rate_pair_region_no_NA <- mobi_rate_pair_region_no_NA %>%
     region_destination = factor(region_destination, levels = region_levels, labels = region_labels),
   )
 
-# 3. Calculate average mobility rates between each origin–destination region pair
+# Calculate average mobility rates (with and without prior international collaboration with destination country) for each region-to-region pair
 CMRot_region <- mobi_rate_pair_region_no_NA  %>%
   group_by(region_origin, region_destination) %>%
   summarise(
@@ -607,13 +613,13 @@ CMRot_region <- mobi_rate_pair_region_no_NA  %>%
     .groups = "drop"
   )
 
-# 4. Reshape from wide to long format for plotting
+# Convert wide-format summary to long-format for plotting multiple mobility rates
 CMRot_region_long <- CMRot_region %>%
   pivot_longer(cols = starts_with("avg_MRot"), 
                names_to = "variable", 
                values_to = "value")
 
-# View output
+#View the reshaped data
 CMRot_region_long
 
 
@@ -622,7 +628,7 @@ CMRot_region_long
 
 ```{r}
 
-# 5. Plot: Line chart of mobility rates by destination region, faceted by origin
+#Draw a line plot (Left: Fig. 9): mobility rates by destination region, faceted by origin region
 
 plot_MRotnc_region<-ggplot(CMRot_region_long, aes(x = factor(region_destination), y = value, color = variable)) +
   geom_line(aes(group = variable), size = 4) +
@@ -664,7 +670,7 @@ plot_MRotnc_region<-ggplot(CMRot_region_long, aes(x = factor(region_destination)
     strip.placement = "outside"
   ) 
 
-# 6. Plot: Bar chart of average CMRot by origin, faceted by destination
+# 6. Draw a bar chart (Right: Fig. 9): average CMRot by region of origin, faceted by destination region
 
 plot_CMRot_region<-ggplot(CMRot_region, aes(x = factor(region_origin, levels = c("SSA", "SA", "NA", "MENA","LAC","ECA", "EAP")))) +
   geom_bar(aes(y = avg_CMRot, fill = region_origin), stat = "identity", position = position_dodge(width = 0.8)) +
@@ -710,28 +716,28 @@ facet_grid(. ~ region_destination, scales = "free_y", space = "free_x"  , switch
   ylab("Average CMRot") +
   labs(subtitle = "Region group of destination country") 
 
-# 7. Combine both plots side by side and save to file
+
+
+#Draw Fig. 9 and save to PNG
+png(file="Fig QSS9--mobility rate_2023.png", width=3000,height=1500) 
+
 grid_layout <- rbind(
   c(1, 1,  2, 2),
   c(1, 1,  2, 2)
 )
-
-
-png(file="C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Fig QSS9--mobility rate_2023.png", width=3000,height=1500) 
-
 grid.arrange(plot_MRotnc_region,plot_CMRot_region, layout_matrix = grid_layout)
 
-dev.off()
+dev.off()  # Finish and save the image
 
 ```
 
 
 ```{r}
-# 1. Remove rows with missing income group data
+# Remove rows with missing income group data
 mobi_rate_pair_income_no_NA <- mobi_rate_pair %>%
   filter(income_origin != '#N/A' & income_destination != '#N/A')
 
-# 2. Aggregate mobility and collaboration numbers by income group pairs
+# Aggregate mobility and collaboration numbers by income group pairs
 
 mobi_coll_income<- mobi_rate_pair_income_no_NA %>%
   group_by(income_origin, income_destination) %>%
@@ -741,12 +747,7 @@ mobi_coll_income<- mobi_rate_pair_income_no_NA %>%
     .groups = "drop"
   )
 
-gini_coll_origin_income <- mobi_coll_income  %>%
-  group_by(income_origin) %>%
-  summarise(
-    gini_coll = ineq::Gini(sum_coll)
-  )
-
+# Calculate Gini coefficient of mobility counts for each origin income group
 gini_mobi_origin_income  <- mobi_coll_income  %>%
   group_by(income_origin) %>%
   summarise(
@@ -754,42 +755,43 @@ gini_mobi_origin_income  <- mobi_coll_income  %>%
   )
 
 
-mobi_coll_income  %>%
-  group_by(income_destination) %>%
+# Calculate Gini coefficient of collaboration counts for each origin income group
+gini_coll_origin_income <- mobi_coll_income  %>%
+  group_by(income_origin) %>%
   summarise(
     gini_coll = ineq::Gini(sum_coll)
   )
 
-mobi_coll_income  %>%
-  group_by(income_destination) %>%
-  summarise(
-    gini_mobi = ineq::Gini(sum_mobi)
-  )
-
-# 3. Compute Gini coefficients to assess distribution inequality
-gini_coll_income <- ineq::Gini(mobi_coll_income$sum_coll)
+#  Compute overall Gini coefficients for total collaboration and mobility
 gini_mobi_income <- ineq::Gini(mobi_coll_income$sum_mobi)
+gini_coll_income <- ineq::Gini(mobi_coll_income$sum_coll)
 
-# 4. Define income group colors
+```
+
+```{r}
+# Define color palette for each income group (for plotting)
 income_color<-c("High"="#1F77B4", 
                    "Upper middle"="#FF7F0E", 
                    "Lower middle"="#2CA02C", 
                    "Low"="#D62728")
-# 5. Extract mobility data: income group-to-income group mobility counts only
 
+# Extract income group-to-income group mobility counts
 n_mobility_income<-mobi_coll_income[,c("income_origin","income_destination","sum_mobi")] 
 
-# 6. Extract mobility data: income group-to-income group collaboration counts only
+# Extract income group-to-income group collaboration counts
 
 n_collaboration_income<-mobi_coll_income[,c("income_origin","income_destination","sum_coll")] 
+```
 
-# 7. Draw mobility and collaboration chord diagram across income group
-png(file="C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Fig QSS--A4--mobility and collaboration--chord diagram between income.png", width=3300,height=1600,res=300)
+```{r}
+# Draw chord diagrams (Fig. A4) for mobility and collaboration flows between income groups
+png(file="Fig QSS--A4--mobility and collaboration--chord diagram between income.png", width=3300,height=1600,res=300)
 
-# 7.1.  Set 2-panel layout: one for mobility, one for collaboration
+# Set up a 2-panel layout (left: mobility, right: collaboration)
 par(mfrow=c(1,2))
 
-# 7.2 Draw directional mobility chord diagram
+# Draw directional chord diagram for mobility flows between income groups
+
 circos.clear()
 circos.par(gap.after = 8,  # ?????????????????????????????????
            track.height = 0.01,  # ?????????????????????
@@ -808,6 +810,8 @@ chordDiagram(n_mobility_income, directional = TRUE,grid.col=income_color,
     transparency = 0.3)
 
 mtext("Mobility flows", side = 3, line =-0.4, font = 1, cex = 1.5)
+
+# Add income group labels and axis to mobility chord diagram
 for(si in get.all.sector.index()) {
   circos.axis(
               major.at = c(0,100000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,1100000,1200000,1300000,1400000,1500000,1600000,1700000,1800000,1900000,2000000,2100000,2200000,2300000,2400000),
@@ -830,7 +834,8 @@ for(si in get.all.sector.index()) {
                 col = "black")
 }
 
-# 7.3. Draw directional collaboration chord diagram                
+#  Draw directional chord diagram for collaboration flows between income groups
+            
 circos.clear()
 circos.par(gap.after = 8,  # ?????????????????????????????????
            track.height = 0.01,  # ?????????????????????
@@ -849,6 +854,8 @@ chordDiagram(n_collaboration_income, directional = TRUE,grid.col=income_color,
     transparency = 0.3)
 
 mtext("Collaboration flows", side = 3, line =-0.4, font = 1, cex = 1.5)
+
+# Add income group labels and axis to collaboration chord diagram
 for(si in get.all.sector.index()) {
   circos.axis(
                major.at = c(0,1000000,2000000,3000000,4000000,5000000,6000000,7000000,8000000,9000000,10000000,11000000,12000000,13000000,14000000,15000000,16000000,17000000,18000000,19000000),
@@ -872,24 +879,18 @@ for(si in get.all.sector.index()) {
 
   }
 
-dev.off( )
+dev.off( ) # Finish and save the image
 
-
-gini_mobi_origin_income 
-gini_coll_origin_income 
-
-gini_coll_income
-gini_mobi_income
 ```
 
 
 
 ```{r}
-# 1. Define income group labels and abbreviations
+# Define income group labels and abbreviations
 income_levels<-c("High", "Upper middle", "Lower middle", "Low")
 income_labels= c("H", "UM", "LM", "L")
 
-# 2. Convert income group names to factor levels with abbreviations
+# Convert income group names to factor levels with abbreviations
 mobi_rate_pair_income_no_NA <- mobi_rate_pair_income_no_NA  %>%
     mutate(
    income_origin = factor( income_origin, levels =  income_levels, labels =  income_labels),
@@ -897,7 +898,7 @@ mobi_rate_pair_income_no_NA <- mobi_rate_pair_income_no_NA  %>%
     origin_destination = paste(income_origin, income_destination, sep = "")  # Create origin-destination combined identifier
   )
 
-# 3. Calculate average mobility rates between each origin–destination income group pair
+# Calculate average mobility rates between each origin–destination income group pair
 CMRot_income <- mobi_rate_pair_income_no_NA %>%
   group_by(income_origin, income_destination) %>%
   summarise(
@@ -908,14 +909,15 @@ CMRot_income <- mobi_rate_pair_income_no_NA %>%
      .groups = "drop"
   )
 
-# 4. Reshape from wide to long format for plotting
+# Reshape from wide to long format for plotting
 CMRot_income_long <- CMRot_income %>%
   pivot_longer(cols = starts_with("avg_MRot"), 
                names_to = "variable", 
                values_to = "value")
+```
 
-# 5. Line chart of three mobility rates by income group of destination, faceted by income group of origin
-
+```{r]}
+#Draw a line plot (Left: Fig. 10): mobility rates by destination income group, faceted by origin income group
 
 plot_MRotnc_income<-ggplot(CMRot_income_long,  aes(x = factor(income_destination), y = value, color = variable)) +
   geom_line(aes(group = variable), size = 4) +
@@ -958,7 +960,7 @@ plot_MRotnc_income<-ggplot(CMRot_income_long,  aes(x = factor(income_destination
     strip.placement = "outside"
   )
 
-# 6. Bar chart of average CMRot by income group of destination, faceted by income group of origin
+# 6. 6. Bar chart (Right: Fig. 10): average CMRot by origin income group, faceted by destination income group
 
 plot_CMRot_income<-ggplot(CMRot_income, aes(x = factor(income_origin, levels = c("L", "LM", "UM", "H"),labels=c("L", "LM", "UM","H")))) +
   geom_bar(aes(y = avg_CMRot, fill = income_origin), stat = "identity", position = position_dodge(width = 0.8)) +
@@ -1002,18 +1004,18 @@ xlab("Income group of origin country") +  # ?????? x ?????????
   ylab("Average CMRot") + # ?????? y ?????????
   labs(subtitle = "Income group of destination country") 
 
+# Draw Fig. 10 and save to PNG
 
-# 7. Combine both plots side by side and save to file
+png(file="Fig QSS10--mobility rate_2023.png", width=3000,height=1500) 
+
 grid_layout <- rbind(
   c(1, 1,  2, 2),
   c(1, 1,  2, 2)
 )
 
-png(file="C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Fig QSS10--mobility rate_2023.png", width=3000,height=1500) 
-
 grid.arrange(plot_MRotnc_income,plot_CMRot_income, layout_matrix = grid_layout)
 
-dev.off()
+dev.off()  # Finish and save the image
 
 
 ```
