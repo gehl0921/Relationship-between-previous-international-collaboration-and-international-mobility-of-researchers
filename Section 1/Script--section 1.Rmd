@@ -1,5 +1,5 @@
 ---
-title: "Section 1--The relationship between prior international collaboration and mobility: global patterns across regions and income groups"
+title: "International collaboration shapes global researcher mobility across diverse socioeconomic contexts"
 output: html_document
 date: "2023-08-17"
 ---
@@ -37,7 +37,7 @@ ggplot(researcher_first_year, aes(x = first_year, y = n_researcher)) +
                      ,breaks=c(0, 200000,400000,600000,800000,1000000)
                      ,labels=c("0","200,000","400,000","600,000","800,000","1,000,000"))+
   scale_x_continuous(limits=c(1990,2019),breaks=seq(1990, 2019,5))+
-  labs(x = "Year",
+  labs(x = "Year of first publication",
        y = "Number of researchers (published first paper)") +
    theme_bw() +
     theme( 
@@ -127,8 +127,15 @@ mobi_rate_country $size <- mobi_rate_country $r_mobi / 100
 mobi_rate_country $size[mobi_rate_country $size < 10] <- 5
 
 ```
+```{r}
+fit <- manova(cbind(MRo_c, MRo_nc) ~ region, data = mobi_rate_country)
+summary(fit)
 
+summary.aov(fit)
 
+TukeyHSD(aov(MRo_c ~ region, data=mobi_rate_country))
+TukeyHSD(aov(MRo_nc ~ region, data=mobi_rate_country))
+```
 
 ```{r}
 # Save the scatter plot (Fig. 3) as a PNG image
@@ -216,6 +223,8 @@ png(file="Fig QSS3--mobility ratio--country level 2019.png", width=1500,height=1
 
 dev.off() # Close and save the plot
 ```
+
+
 ```{r}
 # Define the top 15 countries with most original researchers
 top15_country<-c("JP", "RU", "CN", "ES", "BR", "KR", "US", "IN", "DE", "IT", "UK", "NL", "CA", "FR", "AU")
@@ -238,7 +247,9 @@ png(file="Fig QSS4--Top15.png", width=2500, height=1000)
 
 ggplot(mobi_rate_country_15_long, aes(x = factor(country_code, levels = c("JP", "RU", "CN", "ES", "BR", "KR", "US", "IN", "DE", "IT", "UK", "NL", "CA", "FR", "AU")))) +
   geom_bar(aes(y = value, fill = variable), stat = "identity", position = position_dodge(width = 0.8)) +
-  scale_fill_manual(values = c("MRo_nc" = "#d62728", "MRo_c" = "#1f77b4")) +
+  scale_fill_manual(values = c("MRo_nc" = "#d62728", "MRo_c" = "#1f77b4"),
+                    , labels = c("MRo_nc" = "Without prior international collaboration (MRo_nc)", 
+                      "MRo_c" = "With prior international collaboration (MRo_c)")) +
   
     # Add a point for CMR_o, rescaled to fit the left y-axis
   geom_point(data = mobi_rate_country_15, aes(x = country_code, y = CMR_o / 10, color = "CMR_o"), size = 10, shape = 23, fill = "black") + 
@@ -246,7 +257,7 @@ ggplot(mobi_rate_country_15_long, aes(x = factor(country_code, levels = c("JP", 
     # Set left y-axis for mobility rate and right axis for CMR_o
   scale_y_continuous(
     name = "Mobility rate", limits = c(0, 0.42), expand = c(0, 0), breaks = c(0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4),
-    sec.axis = sec_axis(~.*10, breaks = seq(0, 4, 0.5), name = "CMR_o")
+    sec.axis = sec_axis(~.*10, breaks = seq(0, 4, 0.5), name = "Collaboration Mobility Ratio (CMR_o)")
   ) +
   # Set color for CMR_o points
   scale_color_manual(values = c("MRo_nc" = "#d62728", "MRo_c" = "#1f77b4","CMR_o" = "black")) +
@@ -254,7 +265,7 @@ ggplot(mobi_rate_country_15_long, aes(x = factor(country_code, levels = c("JP", 
   labs(x = "Country code") +
   # Combine legends for bar and point, set layout
   guides(
-    fill = guide_legend(title = NULL, nrow = 1),
+    fill = guide_legend(title = NULL, nrow = 2),
     color = guide_legend(title = NULL, nrow = 1)
   ) + 
   # Theme settings for cleaner and bigger labels
@@ -273,11 +284,13 @@ ggplot(mobi_rate_country_15_long, aes(x = factor(country_code, levels = c("JP", 
     axis.title.y = element_text(size = 40, margin = margin(0, 20, 0, 0)),
     axis.title.y.right = element_text(margin = margin(l = 20)),
     legend.text = element_text(size = 35),
-    legend.position = c(0.91, 0.92)
+    legend.position = c(0.81, 0.92)
     )
 
 dev.off() # Finish and save the plot
 ```
+
+
 ```{r}
 # Load world map data
 world_map <- map_data("world")
@@ -359,12 +372,11 @@ mobi_rate_country_region_no_NA<- mobi_rate_country %>%  filter(region != '#N/A' 
 
 plot_mobi_rate_region<-ggplot(mobi_rate_region_summary_long, aes(x = factor(region, levels = c("East Asia & Pacific", "Europe & Central Asia","Latin America & Caribbean","Middle East & North Africa","North America","South Asia", "Sub-Saharan Africa")))) +
   geom_bar(aes(y = value, fill = variable), stat = "identity", position = position_dodge(width = 0.8)) +
-  scale_fill_manual(values = c("mean_MRo_nc" = "#d62728", "mean_MRo_c" = "#1f77b4"),
-                    labels = c("mean_MRo_nc" = "Without prior international collaboration (MRo_nc)", 
+  scale_fill_manual(values = c("mean_MRo_nc" = "#d62728", "mean_MRo_c" = "#1f77b4"), labels = c("mean_MRo_nc" = "Without prior international collaboration (MRo_nc)", 
                       "mean_MRo_c" = "With prior international collaboration (MRo_c)")) +
   
   scale_y_continuous(
-    name = "Average mobility rate", limits = c(0, 0.27), expand = c(0, 0), breaks = c(0, 0.05, 0.1, 0.15, 0.2,0.25)
+    name = "Mean mobility rate", limits = c(0, 0.27), expand = c(0, 0), breaks = c(0, 0.05, 0.1, 0.15, 0.2,0.25)
   ) +
     # Use region abbreviations for the x-axis
   
@@ -476,14 +488,21 @@ mobi_rate_country_income_no_NA<- mobi_rate_country %>%  filter(income_group != '
 # Bar plot: average mobility rates by income group (with/without prior international collaboration)
 plot_mobi_rate_income<-ggplot(mobi_rate_income_summary_long  , aes(x = factor(income_group, levels = c("High", "Upper middle", "Lower middle", "Low")))) +
   geom_bar(aes(y = value, fill = variable), stat = "identity", position = position_dodge(width = 0.8)) +
-  scale_fill_manual(values = c("mean_MRo_nc" = "#d62728", "mean_MRo_c" = "#1f77b4")) +
+  scale_fill_manual(values = c("mean_MRo_nc" = "#d62728", "mean_MRo_c" = "#1f77b4"), labels = c("mean_MRo_nc" = "Without prior international collaboration (MRo_nc)", 
+                      "mean_MRo_c" = "With prior international collaboration (MRo_c)")) +
+  
+  scale_y_continuous(
+    name = "Mean mobility rate", limits = c(0, 0.27), expand = c(0, 0), breaks = c(0, 0.05, 0.1, 0.15, 0.2,0.25)
+  ) +
 
-  scale_color_manual(values = c("mean_MRo_nc" = "#d62728", "mean_MRo_c" = "#1f77b4","CMR_o" = "black")) +
+  scale_color_manual(values = c("mean_MRo_nc" = "#d62728", "mean_MRo_c" = "#1f77b4"),
+                    labels = c("mean_MRo_nc" = "Without prior international collaboration (MRo_nc)", 
+                      "mean_MRo_c" = "With prior international collaboration (MRo_c)")) +
   scale_x_discrete(breaks = c( "High", "Upper middle", "Lower middle", "Low"),
                      labels=c("H", "UM", "LM", "L")
                                 )+
   scale_y_continuous(
-    name = "Average mobility rate", limits = c(0, 0.27), expand = c(0, 0), breaks = c(0, 0.05, 0.1, 0.15, 0.2,0.25)
+    name = "mean mobility rate", limits = c(0, 0.27), expand = c(0, 0), breaks = c(0, 0.05, 0.1, 0.15, 0.2,0.25)
   ) +
   labs(x = "Income group of origin country") +
   labs(y="Mobility rate")+
@@ -593,14 +612,14 @@ CMR_income_summary <- mobi_rate_country %>%
   group_by(income_group) %>%
   summarise(mean_CMR_o = mean(CMR_o, na.rm = TRUE),
             country_count = n()) %>%
-  mutate(region = "Average")
+  mutate(region = "Mean")
 
 # Calculate average CMR_o and country count for each region (income_group set as "Average")
 CMR_region_summary <- mobi_rate_country %>%
   group_by(region) %>%
   summarise(mean_CMR_o = mean(CMR_o, na.rm = TRUE),
             country_count = n()) %>%
-  mutate(income_group = "Average")
+  mutate(income_group = "Mean")
 
 # Combine all summaries into one table
 CMR_region_income<-bind_rows(CMR_region_income_summary , CMR_income_summary, CMR_region_summary)
@@ -625,15 +644,15 @@ png(file="Fig QSS--A2--mobility rate--region and income.png", width=1500,height=
 
 # Create a heatmap of mean_CMR_o for each region and income group
 ggplot(CMR_region_income, aes(
-  x = factor(income_group, levels = c("High", "Upper middle", "Lower middle", "Low","Average")),
-  y = factor(region, levels = c("Average", "East Asia & Pacific", "Europe & Central Asia","Latin America & Caribbean","Middle East & North Africa",
+  x = factor(income_group, levels = c("High", "Upper middle", "Lower middle", "Low","Mean")),
+  y = factor(region, levels = c("Mean", "East Asia & Pacific", "Europe & Central Asia","Latin America & Caribbean","Middle East & North Africa",
                                  "North America","South Asia","Sub-Saharan Africa")), fill = mean_CMR_o)) +
   
 # Main colored tiles for mean_CMR_o (excluding summary rows/columns)
-   geom_tile(aes(fill = ifelse(income_group == "Average" | region == "Average", NA, mean_CMR_o)), color = "white") +
+   geom_tile(aes(fill = ifelse(income_group == "Mean" | region == "Mean", NA, mean_CMR_o)), color = "white") +
   
 # White tiles for summary rows/columns (the "Average" cells)
-  geom_tile(data = subset(CMR_region_income, income_group == "Average" | region == "Average"), fill = "white", color = "white") +
+  geom_tile(data = subset(CMR_region_income, income_group == "Mean" | region == "Mean"), fill = "white", color = "white") +
   
 # Add label with mean value and country count to each cell
 
