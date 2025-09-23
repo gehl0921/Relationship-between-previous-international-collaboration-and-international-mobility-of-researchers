@@ -21,7 +21,7 @@ library(patchwork)
 
 ```{r}
 # Read country pair-level mobility data (with more than 100 mobile researchers) from CSV file
-mobi_rate_pair <-read.csv("mobility ratio--origin and destination from--more than 100--1990-2019_2023.csv") 
+mobi_rate_pair <-read.csv("C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Github/Section 2/mobility ratio--origin and destination from--more than 100.csv") 
 ```
 
 
@@ -138,7 +138,7 @@ plot_legend <- ggplot(df_top3_long, aes(
   theme_minimal()+
     theme(
     legend.position = "right",
-    legend.direction = "horizontal",  # 👈 关键设置
+    legend.direction = "horizontal",  
     legend.box = "horizontal",
     legend.title = element_blank(),
     legend.text = element_text(size = 40),
@@ -337,9 +337,9 @@ ggplot(CMRot_15, aes(x = destination, y = origin, fill = CMR_ot)) +
   theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    panel.border = element_blank(), # ????????????
+    panel.border = element_blank(), 
     plot.title = element_text(hjust = 0.5, size = 40),
-    axis.ticks = element_line(size = 1.5), # ?????????????????????
+    axis.ticks = element_line(size = 1.5), 
     axis.ticks.length = unit(0.5, "cm"),
     axis.text = element_text(size = 35),
     axis.title = element_blank(),
@@ -373,7 +373,7 @@ mobi_coll_region<- mobi_rate_pair_region_no_NA %>%
     sum_coll = sum(r_coll, na.rm = TRUE),
     .groups = "drop"
   )
-
+  
 # Calculate the Gini coefficient of collaboration counts for each region of origin
 gini_coll_origin_region <- mobi_coll_region %>%
   group_by(region_origin) %>%
@@ -425,9 +425,9 @@ par(mfrow=c(1,2))
 
 # Draw directional chord diagram for mobility flows between regions
 circos.clear()
-circos.par(gap.after = 8,  # ?????????????????????????????????
-           track.height = 0.01,  # ?????????????????????
-           circle.margin = c(0.13, 0.13, 0.13, 0.13))  # ??????????????????
+circos.par(gap.after = 8,  
+           track.height = 0.01,  
+           circle.margin = c(0.13, 0.13, 0.13, 0.13))  
 
 chordDiagram(n_mobility_region, directional = TRUE,grid.col=region_color,
                           link.lwd = 0.5, link.lty = 1, link.border = "white",
@@ -502,16 +502,13 @@ for(si in get.all.sector.index()) {
 # Draw directional chord diagram for collaboration flows between regions
 
 circos.clear()
-circos.par(gap.after = 8,  # ?????????????????????????????????
-           track.height = 0.01,  # ?????????????????????
-           circle.margin = c(0.13, 0.13, 0.13, 0.13))  # ??????????????????
+circos.par(gap.after = 8,  
+           track.height = 0.01,  
+           circle.margin = c(0.13, 0.13, 0.13, 0.13))  
 
 chordDiagram(n_collaboration_region, directional = TRUE,grid.col=region_color,
                           link.lwd = 0.5, link.lty = 1, link.border = "white",
              annotationTrack = "grid",
-             #annotationTrack = "name", 
-             #annotationTrackHeight = 0.05, 
-             #grid =list( fontsize = 12,fontfamily="Arial")
              link.sort=TRUE,
              link.decreasing=TRUE,
               direction.type = c("diffHeight", "arrows"),
@@ -528,8 +525,7 @@ for(si in get.all.sector.index()) {
               minor.ticks = 9,
               labels.cex = fontsize(7),
               sector.index = si
-             # track.index = 1,
-             # labels.niceFacing = TRUE
+
             )
   xlim = get.cell.meta.data("xlim", sector.index = si, track.index = 1)
   ylim = get.cell.meta.data("ylim", sector.index = si, track.index = 1)
@@ -628,98 +624,105 @@ CMRot_region_long
 
 ```{r}
 
-#Draw a line plot (Left: Fig. 9): mobility rates by destination region, faceted by origin region
+#Draw a bar plot (Left: Fig. 9): mobility rates by destination region, faceted by origin region
 
-plot_MRotnc_region<-ggplot(CMRot_region_long, aes(x = factor(region_destination), y = value, color = variable)) +
-  geom_line(aes(group = variable), size = 4) +
-  geom_point(size = 4) +
-  scale_color_manual(
-    values = c("avg_MRot_nc" = "#d62728", "avg_MRot_c" = "#1f77b4", "avg_MRot_all" = "#2ca02c"),
-    labels = c("avg_MRot_nc" = "ave. MRot_nc", "avg_MRot_c" = "ave. MRot_c", "avg_MRot_all" = "ave. MRot_all")
+plot_MRotnc_region<-ggplot(CMRot_region_long,
+       aes(x = factor(region_destination), y = value, fill = variable)) +
+  geom_bar(stat = "identity",
+           position = position_dodge(width = 0.9),
+           colour = NA) +
+  scale_fill_manual(
+    values = c("avg_MRot_nc" = "#d62728",
+               "avg_MRot_c"  = "#1f77b4",
+               "avg_MRot_all"= "#2ca02c"),
+    labels = c("avg_MRot_nc" = "mean MRot_nc",
+               "avg_MRot_c"  = "mean MRot_c",
+               "avg_MRot_all"= "mean MRot_all")
   ) +
-  scale_y_continuous(
-    name = "Region of origin country", limits = c(0, 0.11), expand = c(0, 0), breaks = c(0, 0.02, 0.04, 0.06, 0.08, 0.1),
-    labels = c("0", "", "", "0.6", "", "")
+  scale_x_discrete(position = "bottom") +   
+   scale_y_continuous(
+    name = "Region of origin country",
+    limits = c(0, 0.107), expansion(mult = c(0.02, 0))   ,
+    breaks = c(0, 0.02, 0.04, 0.06, 0.08, 0.1),
+    labels = c("0", "", "0.04", "", "0.08", "")
   ) +
-  facet_grid(rows = vars(region_origin), scales = "free_y", switch = "y") +  # ??????????????????facet,????????????????????????
+  facet_grid(rows = vars(region_origin), scales = "free_y", switch = "y") +
   labs(x = "Region of destination country") +
-  guides(
-    color = guide_legend(title = NULL, nrow = 1)
-  ) +
+  guides(fill = guide_legend(title = NULL, nrow = 1)) +
   theme_bw() +
   theme(
-    panel.grid.minor = element_blank(),
-    panel.border = element_rect(color = "black", fill = NA, size = 1.5),  # ????????????
-    panel.spacing = unit(0.5, "lines"),  # ???????????????????????????
+        panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA, size = 1.5),
+    panel.spacing = unit(0.5, "lines"),
     plot.title.position = "plot",
     plot.title = element_text(hjust = 0.02, vjust = 0, size = 80, face = "bold", color = "black"),
     axis.ticks = element_line(size = 1.5),
     axis.ticks.length = unit(0.5, "cm"),
     axis.line = element_line(size = 1.5),
-    axis.text.y = element_text(size = 50),
+    axis.text.y = element_text(size = 30),
     axis.text.x = element_text(size = 50),
-    axis.title = element_text(size = 50),
-    axis.title.x = element_text(size = 50, margin = margin(10, 0, 0, 0)),
+
+    axis.title.x.top    = element_blank(),
+    axis.title.x.bottom = element_text(size = 50, margin = margin(t = 20)),
+
     axis.title.y = element_text(size = 50, margin = margin(0, 10, 0, 0)),
     axis.title.y.right = element_text(margin = margin(l = 10)),
+
     legend.text = element_text(size = 50, face = "plain"),
     legend.title = element_text(size = 50, face = "plain"),
     legend.position = "bottom",
-    strip.text.y = element_text(size = 50, angle = 180, hjust = 0.5),  # ????????????
+
+    strip.text.y = element_text(size = 50, angle = 180, hjust = 0.5),
     strip.background = element_blank(),
-    strip.placement = "outside"
-  ) 
+    strip.placement = "outside",
+    plot.margin = margin(t = 20, r = 20, b = 40, l = 20)
+  )
 
-# 6. Draw a bar chart (Right: Fig. 9): average CMRot by region of origin, faceted by destination region
+# Draw a bar chart (Right: Fig. 9): average CMRot by region of origin, faceted by destination region
 
-plot_CMRot_region<-ggplot(CMRot_region, aes(x = factor(region_origin, levels = c("SSA", "SA", "NA", "MENA","LAC","ECA", "EAP")))) +
-  geom_bar(aes(y = avg_CMRot, fill = region_origin), stat = "identity", position = position_dodge(width = 0.8)) +
- geom_text(aes(y = avg_CMRot, 
-                label = round(avg_CMRot, 0), 
-               hjust = ifelse(avg_CMRot < 700, -0.4, 1.1)), 
-
-             size = 15) +  
-  scale_y_continuous(breaks = seq(0, 730, by = 200),  
-                     labels = c("0",  "", "400", "")) + 
-  scale_fill_manual(values = c( 
-    "EAP" = "#1f77b4",
-    "ECA" = "#ff7f0e",
-    "LAC" = "#2ca02c",
-    "MENA" = "#d62728",
-    "NA" = "#9467bd",
-    "SA" = "#8c564b",
-    "SSA" = "#e377c2")) +
-facet_grid(. ~ region_destination, scales = "free_y", space = "free_x"  , switch = "y" ) +  
-
-  coord_flip() +
+plot_CMRot_region<-ggplot(CMRot_region, aes(x = factor(region_destination, levels = c("EAP","ECA","LAC", "MENA","NA","SA","SSA")))) +
+    geom_col(aes(y = avg_CMRot), fill = "#ff7f0e", width = 0.8, color = NA) +
+  geom_text(aes(y = avg_CMRot, label = round(avg_CMRot, 0),
+                vjust = ifelse(avg_CMRot < 700, -0.4, 1.1)),
+            size = 15) +
+  scale_x_discrete(position = "bottom") +
+  scale_y_continuous(
+    name   = "Region of origin country",
+    breaks = seq(0, 730, by = 200),  
+    labels = c("0",  "200", "", "600"),
+    expand = expansion(mult = c(0.02, 0.08))  ) + 
+  
+facet_grid(rows = vars(region_origin), switch = "y", drop = FALSE) +
+  labs(x = "Region of destination country",
+       caption = "mean CMRot") +
   theme_bw() +
   theme(
-    panel.grid.major = element_blank(),
+    aspect.ratio = 0.195,
     panel.grid.minor = element_blank(),
-    panel.border = element_blank(), # ????????????
-    plot.title.position = "plot",  # ????????????????????????
-    plot.title = element_text(hjust = 0.02, vjust = 0, size = 80, face = "bold", color = "black"),
-    plot.subtitle = element_text(hjust = 0.5, size = 50), 
-    axis.ticks = element_line(size = 1.5), # ?????????????????????
+    panel.border = element_rect(color = "black", fill = NA, size = 1.5),
+    panel.spacing = unit(0.5, "lines"),
+    plot.title.position = "plot",
+    plot.title = element_text(hjust = 0.02, vjust = 0, size = 50, face = "bold", color = "black"),
+    plot.caption = element_text(hjust = 0.5, size = 50),
+    axis.ticks = element_line(size = 1.5),
     axis.ticks.length = unit(0.5, "cm"),
-    axis.line = element_line(size = 1.5), # ??????????????????
-    axis.text = element_text(size = 50),
-    axis.title = element_text(size = 50),
-    axis.title.x = element_text(size = 50, margin = margin(20, 0, 0, 0)),
-    axis.title.y = element_text(size = 50, margin = margin(0, 20, 0, 0)),
-    axis.title.y.right = element_text(margin = margin(l = 20)),
+    axis.line = element_line(size = 1.5),
+    axis.text.y = element_text(size = 30),
+    axis.text.x = element_text(size = 50),
+    axis.title.x.top    = element_blank(),
+    axis.title.x.bottom = element_text(size = 50, margin = margin(20, 0, 20, 0)),
+    axis.title.y = element_text(size = 50, margin = margin(0, 10, 0, 0)),
     legend.position = "none",
-    strip.text = element_text(size = 50, hjust = 0.5),  
-    strip.background = element_blank() 
-  )+
-  xlab("Region of origin country") +  
-  ylab("Average CMRot") +
-  labs(subtitle = "Region group of destination country") 
+    strip.text.y = element_text(size = 50, angle = 180, hjust = 0.5),
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    plot.margin = margin(t = 20, r = 20, b = 40, l = 20)
+  ) 
 
 
 
 #Draw Fig. 9 and save to PNG
-png(file="Fig QSS9--mobility rate_2023.png", width=3000,height=1500) 
+png(file="Fig QSS9--mobility rate_2023.png", width=3000,height=2000) 
 
 grid_layout <- rbind(
   c(1, 1,  2, 2),
@@ -728,6 +731,7 @@ grid_layout <- rbind(
 grid.arrange(plot_MRotnc_region,plot_CMRot_region, layout_matrix = grid_layout)
 
 dev.off()  # Finish and save the image
+
 
 ```
 
@@ -793,16 +797,14 @@ par(mfrow=c(1,2))
 # Draw directional chord diagram for mobility flows between income groups
 
 circos.clear()
-circos.par(gap.after = 8,  # ?????????????????????????????????
-           track.height = 0.01,  # ?????????????????????
-           circle.margin = c(0.13, 0.13, 0.13, 0.13))  # ??????????????????
+circos.par(gap.after = 8,  
+           track.height = 0.01,  
+           circle.margin = c(0.13, 0.13, 0.13, 0.13))  
 
 chordDiagram(n_mobility_income, directional = TRUE,grid.col=income_color,
                           link.lwd = 0.5, link.lty = 1, link.border = "white",
              annotationTrack = "grid",
-             #annotationTrack = "name", 
-             #annotationTrackHeight = 0.05, 
-             #grid =list( fontsize = 12,fontfamily="Arial")
+
              link.sort=TRUE,
              link.decreasing=TRUE,
               direction.type = c("diffHeight", "arrows"),
@@ -819,8 +821,7 @@ for(si in get.all.sector.index()) {
               minor.ticks = 9,
               labels.cex = fontsize(7),
               sector.index = si
-             # track.index = 1,
-             # labels.niceFacing = TRUE
+
             )
   xlim = get.cell.meta.data("xlim", sector.index = si, track.index = 1)
   ylim = get.cell.meta.data("ylim", sector.index = si, track.index = 1)
@@ -837,16 +838,13 @@ for(si in get.all.sector.index()) {
 #  Draw directional chord diagram for collaboration flows between income groups
             
 circos.clear()
-circos.par(gap.after = 8,  # ?????????????????????????????????
-           track.height = 0.01,  # ?????????????????????
-           circle.margin = c(0.13, 0.13, 0.13, 0.13))  # ??????????????????
+circos.par(gap.after = 8,  
+           track.height = 0.01,  
+           circle.margin = c(0.13, 0.13, 0.13, 0.13))  
 
 chordDiagram(n_collaboration_income, directional = TRUE,grid.col=income_color,
                           link.lwd = 0.5, link.lty = 1, link.border = "white",
              annotationTrack = "grid",
-             #annotationTrack = "name", 
-             #annotationTrackHeight = 0.05, 
-             #grid =list( fontsize = 12,fontfamily="Arial")
              link.sort=TRUE,
              link.decreasing=TRUE,
               direction.type = c("diffHeight", "arrows"),
@@ -863,8 +861,7 @@ for(si in get.all.sector.index()) {
               minor.ticks = 9,
               labels.cex = fontsize(7),
               sector.index = si
-             # track.index = 1,
-             # labels.niceFacing = TRUE
+
             )
   xlim = get.cell.meta.data("xlim", sector.index = si, track.index = 1)
   ylim = get.cell.meta.data("ylim", sector.index = si, track.index = 1)
@@ -916,97 +913,110 @@ CMRot_income_long <- CMRot_income %>%
                values_to = "value")
 ```
 
-```{r]}
-#Draw a line plot (Left: Fig. 10): mobility rates by destination income group, faceted by origin income group
-
-plot_MRotnc_income<-ggplot(CMRot_income_long,  aes(x = factor(income_destination), y = value, color = variable)) +
-  geom_line(aes(group = variable), size = 4) +
-  geom_point(size = 4) +
-  scale_color_manual(
-    values = c("avg_MRot_nc" = "#d62728", "avg_MRot_c" = "#1f77b4", "avg_MRot_all" = "#2ca02c"),
-    labels = c("avg_MRot_nc" = "ave. MRot_nc", "avg_MRot_c" = "ave. MRot_c", "avg_MRot_all" = "ave. MRot_all")
+```{r}
+#Draw a bar plot (Left: Fig. 10): mobility rates by destination income group, faceted by origin income group
+plot_MRotnc_income<-ggplot(CMRot_income_long,
+       aes(x = factor(income_destination), y = value, fill = variable)) +
+  geom_bar(stat = "identity",
+           position = position_dodge(width = 0.9),
+           colour = NA) +
+  scale_fill_manual(
+    values = c("avg_MRot_nc" = "#d62728",
+               "avg_MRot_c"  = "#1f77b4",
+               "avg_MRot_all"= "#2ca02c"),
+    labels = c("avg_MRot_nc" = "mean MRot_nc",
+               "avg_MRot_c"  = "mean MRot_c",
+               "avg_MRot_all"= "mean MRot_all")
   ) +
+  scale_x_discrete(position = "bottom") +   
   scale_y_continuous(
-    name = "Income group of origin country", limits = c(0, 0.11), expand = c(0, 0), breaks = c(0, 0.02, 0.04, 0.06, 0.08, 0.1),
-    labels = c("0", "", "", "0.6", "", "")
+    name = "Income group of origin country",
+    limits = c(0, 0.107), expansion(mult = c(0.02, 0))   ,
+    breaks = c(0, 0.02, 0.04, 0.06, 0.08, 0.1),
+    labels = c("0", "", "0.04", "", "0.08", "")
   ) +
-  facet_grid(rows = vars(income_origin), scales = "free_y", switch = "y") +  # 
+  facet_grid(rows = vars(income_origin), scales = "free_y", switch = "y") +
   labs(x = "Income group of destination country") +
-  guides(
-    color = guide_legend(title = NULL, nrow = 1)
-  ) +
+  guides(fill = guide_legend(title = NULL, nrow = 1)) +
   theme_bw() +
   theme(
     panel.grid.minor = element_blank(),
-    panel.border = element_rect(color = "black", fill = NA, size = 1.5),  # ????????????
-    panel.spacing = unit(0.5, "lines"),  # ???????????????????????????
+    panel.border = element_rect(color = "black", fill = NA, size = 1.5),
+    panel.spacing = unit(0.5, "lines"),
     plot.title.position = "plot",
     plot.title = element_text(hjust = 0.02, vjust = 0, size = 80, face = "bold", color = "black"),
-    
     axis.ticks = element_line(size = 1.5),
     axis.ticks.length = unit(0.5, "cm"),
     axis.line = element_line(size = 1.5),
-    axis.text.y = element_text(size = 50),
+    axis.text.y = element_text(size = 30),
     axis.text.x = element_text(size = 50),
-    axis.title = element_text(size = 50),
-    axis.title.x = element_text(size = 50, margin = margin(10, 0, 0, 0)),
+
+    axis.title.x.top    = element_blank(),
+    axis.title.x.bottom = element_text(size = 50, margin = margin(t = 20)),
+
     axis.title.y = element_text(size = 50, margin = margin(0, 10, 0, 0)),
     axis.title.y.right = element_text(margin = margin(l = 10)),
+
     legend.text = element_text(size = 50, face = "plain"),
     legend.title = element_text(size = 50, face = "plain"),
     legend.position = "bottom",
-    strip.text.y = element_text(size = 50, angle = 180, hjust = 0.5),  
+
+    strip.text.y = element_text(size = 50, angle = 180, hjust = 0.5),
     strip.background = element_blank(),
-    strip.placement = "outside"
+    strip.placement = "outside",
+
+
+    plot.margin = margin(t = 20, r = 20, b = 40, l = 20)
   )
 
-# 6. 6. Bar chart (Right: Fig. 10): average CMRot by origin income group, faceted by destination income group
+#Bar chart (Right: Fig. 10): average CMRot by origin income group, faceted by destination income group
 
-plot_CMRot_income<-ggplot(CMRot_income, aes(x = factor(income_origin, levels = c("L", "LM", "UM", "H"),labels=c("L", "LM", "UM","H")))) +
-  geom_bar(aes(y = avg_CMRot, fill = income_origin), stat = "identity", position = position_dodge(width = 0.8)) +
- geom_text(aes(y = avg_CMRot, 
-                label = round(avg_CMRot, 0), 
-                #vjust = ifelse(CMRot < 700, 0, 0),
-               hjust = ifelse(avg_CMRot < 500, -0.4, 1.1)), # ??????CMRot????????????vjust
-           #
-             size = 15) +  # ????????????bar??????nudge_y
-  scale_fill_manual(values = c( 
-    "H" = "#1f77b4",
-    "UM" = "#ff7f0e",
-    "LM"= "#2ca02c",
-    "L" = "#d62728")) +
-facet_grid(. ~ income_destination, scales = "free_y", space = "free_x", switch = "y"
-           ) +  # ??????????????????
- scale_y_continuous(limits = c(0, 580), breaks = c(0, 200, 400)) +
-  coord_flip() + 
+plot_CMRot_income<-ggplot(CMRot_income,
+       aes(x = factor(income_destination, levels = c("H","UM","LM","L"),
+                      labels = c("H","UM","LM","L")))) +
+  geom_col(aes(y = avg_CMRot), fill = "#ff7f0e", width = 0.8, color = NA) +
+  geom_text(aes(y = avg_CMRot, label = round(avg_CMRot, 0),
+                vjust = ifelse(avg_CMRot < 500, -0.4, 1.1)),
+            size = 15) +
+  scale_x_discrete(position = "bottom") +
+  scale_y_continuous(
+    name   = "Income group of origin country",
+    limits = c(0, 610),
+    breaks = c(0, 100,200, 300, 400,500,600),
+     labels = c("0", "", "200", "", "400", "","600"),
+    expand = expansion(mult = c(0.02, 0.08))   
+  ) +
+  facet_grid(rows = vars(income_origin), switch = "y", drop = FALSE) +
+  labs(x = "Income group of destination country",
+       caption = "mean CMRot") +
   theme_bw() +
   theme(
-    panel.grid.major = element_blank(),
+    aspect.ratio = 0.34,
     panel.grid.minor = element_blank(),
-    panel.border = element_blank(), # ????????????
-    plot.title.position = "plot",  # ????????????????????????
-    plot.title = element_text(hjust = 0.02, vjust = 0, size = 80, face = "bold", color = "black"),
-    plot.subtitle = element_text(hjust = 0.5, size = 50), 
-    axis.ticks = element_line(size = 1.5), # ?????????????????????
+    panel.border = element_rect(color = "black", fill = NA, size = 1.5),
+    panel.spacing = unit(0.5, "lines"),
+    plot.title.position = "plot",
+    plot.title = element_text(hjust = 0.02, vjust = 0, size = 50, face = "bold", color = "black"),
+    plot.caption = element_text(hjust = 0.5, size = 50),
+    axis.ticks = element_line(size = 1.5),
     axis.ticks.length = unit(0.5, "cm"),
-    axis.line = element_line(size = 1.5), # ??????????????????
-    axis.text = element_text(size = 50),
-    axis.title = element_text(size = 50),
-    axis.title.x = element_text(size = 50, margin = margin(10, 0, 0, 0)),
-    axis.title.y = element_text(size = 50, margin = margin(0, 20, 0, 0)),
-    axis.title.y.right = element_text(margin = margin(l = 20)),
+    axis.line = element_line(size = 1.5),
+    axis.text.y = element_text(size = 30),
+    axis.text.x = element_text(size = 50),
+    axis.title.x.top    = element_blank(),
+    axis.title.x.bottom = element_text(size = 50, margin = margin(20, 0, 20, 0)),
+    axis.title.y = element_text(size = 50, margin = margin(0, 10, 0, 0)),
     legend.position = "none",
-    strip.text = element_text(size = 50, hjust = 0.5),  # ????????????????????????
-    strip.background = element_blank()  # ????????????????????????
-    
-  )+
-xlab("Income group of origin country") +  # ?????? x ?????????
-  ylab("Average CMRot") + # ?????? y ?????????
-  labs(subtitle = "Income group of destination country") 
+    strip.text.y = element_text(size = 50, angle = 180, hjust = 0.5),
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    plot.margin = margin(t = 20, r = 20, b = 40, l = 20)
+  ) 
+
 
 # Draw Fig. 10 and save to PNG
 
-png(file="Fig QSS10--mobility rate_2023.png", width=3000,height=1500) 
+png(file="Fig QSS10--mobility rate_2023.png", width=3000,height=2000) 
 
 grid_layout <- rbind(
   c(1, 1,  2, 2),
@@ -1016,6 +1026,4 @@ grid_layout <- rbind(
 grid.arrange(plot_MRotnc_income,plot_CMRot_income, layout_matrix = grid_layout)
 
 dev.off()  # Finish and save the image
-
-
 ```
