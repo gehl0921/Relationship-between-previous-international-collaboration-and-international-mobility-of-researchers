@@ -306,11 +306,11 @@ dev.off() # Finish and save the image
 # Filter pair-level data for pairs where both origin and destination are in the top 15 countries
 mobility_rate_pair_15 <- mobi_rate_pair[mobi_rate_pair$origin %in% country_15 & mobi_rate_pair$destination %in% country_15, ]
 
-# Select only origin, destination, and CMR_ot columns
-CMRot_15 <- mobility_rate_pair_15[, c('origin', 'destination', 'CMR_ot')]
+# Select only origin, destination, and CMRot columns
+CMRot_15 <- mobility_rate_pair_15[, c('origin', 'destination', 'CMRot')]
 
-# Calculate the median value of CMR_ot for these pairs
-median_CMRot_15 <- median(CMRot_15 $CMR_ot, na.rm = TRUE)
+# Calculate the median value of CMRot for these pairs
+median_CMRot_15 <- median(CMRot_15 $CMRot, na.rm = TRUE)
 
 # Define the order of 15 countries
 country_level<-c("NL",	"FR",	"IT",	"AU",	"DE",	"UK",	"US",	"CA",	"ES",	"BR"	,"IN"	,"KR","RU","JP","CN")
@@ -325,10 +325,10 @@ CMRot_15$destination <- factor(CMRot_15$destination,levels = country_level)
 # Save the heatmap (Fig. 8) as a PNG image
 png(file="Fig QSS8--countries--mobility rate--origin and detinaiton_2023.png", width=1500,height=1400)
 
-# Plot heatmap of CMR_ot values between country pairs (origin and destination)
-ggplot(CMRot_15, aes(x = destination, y = origin, fill = CMR_ot)) +
+# Plot heatmap of CMRot values between country pairs (origin and destination)
+ggplot(CMRot_15, aes(x = destination, y = origin, fill = CMRot)) +
   geom_tile(color = "white") +
-  geom_text(aes(label = round(CMR_ot, 1)), color = "black", size = 8, 
+  geom_text(aes(label = round(CMRot, 1)), color = "black", size = 8, 
             hjust = 0.5, vjust = 0.5) +
   scale_fill_gradient2(low = "#1f77b4", mid = "white", high = "#d62728", 
                        midpoint = median_CMRot_15,  limits = c(0, 2*median_CMRot_15), oob = scales::squish,na.value = "grey90") +
@@ -1028,6 +1028,5 @@ grid.arrange(plot_MRotnc_income,plot_CMRot_income, layout_matrix = grid_layout)
 
 dev.off()  # Finish and save the image
 ```
-
 
 
