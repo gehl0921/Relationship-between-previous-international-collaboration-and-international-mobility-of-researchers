@@ -21,7 +21,7 @@ library(patchwork)
 
 ```{r}
 # Read country pair-level mobility data (with more than 100 mobile researchers) from CSV file
-mobi_rate_pair <-read.csv("C:/Users/geh1/OneDrive - Universiteit Leiden/Desktop/Project of PhD/previous collaboration and future mobility/Journal paper_2023/1b/Github/Section 2/mobility ratio--origin and destination from--more than 100.csv") 
+mobi_rate_pair <-read.csv("mobility ratio--origin and destination from--more than 100.csv") 
 ```
 
 
@@ -1027,3 +1027,4 @@ grid.arrange(plot_MRotnc_income,plot_CMRot_income, layout_matrix = grid_layout)
 
 dev.off()  # Finish and save the image
 ```
+
