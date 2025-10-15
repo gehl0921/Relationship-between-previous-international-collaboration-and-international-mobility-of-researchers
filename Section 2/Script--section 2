@@ -148,7 +148,7 @@ plot_legend <- ggplot(df_top3_long, aes(
 legend_shared <- cowplot::get_legend(plot_legend)
 
 
-#Draw Fig. 7 
+#Draw Fig. 6
 # Combine 15 plots with extracted legend
 png(file="Fig QSS6--top 3 destination and collaboration.png", width=2000,height=1500)
 cowplot::plot_grid(final_plot, legend_shared, ncol = 1, rel_heights = c(1, 0.1))
@@ -224,6 +224,9 @@ mobi_rate_pair <- mobi_rate_pair %>%
 
 
 ```{r}
+# Save the scatter plot (Fig. 7) as a PNG image
+png(file="Fig QSS7--mobility rate--origin and detinaiton.png", width=1500,height=1500)
+
 
 ggplot(mobi_rate_pair,
            aes(x = MRot_nc, y = MRot_c)) +
