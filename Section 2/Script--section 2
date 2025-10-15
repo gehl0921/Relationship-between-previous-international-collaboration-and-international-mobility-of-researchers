@@ -17,6 +17,7 @@ library(gridExtra)
 library(grid) 
 library(ggrepel)
 library(patchwork)
+library(scales)
 ```
 
 ```{r}
@@ -1027,5 +1028,6 @@ grid.arrange(plot_MRotnc_income,plot_CMRot_income, layout_matrix = grid_layout)
 
 dev.off()  # Finish and save the image
 ```
+
 
 
