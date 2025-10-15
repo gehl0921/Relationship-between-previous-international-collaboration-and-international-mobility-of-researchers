@@ -107,7 +107,7 @@ color <- c(
 
 # Create a data frame for country style (color and shape)
 country_style <- data.frame(country_code_15, color)
-country_style$shape <- 15
+country_style$shape <- 16
 
 # Merge color and shape info into mobility data by country code
 mobi_rate_country <-
@@ -127,15 +127,7 @@ mobi_rate_country $size <- mobi_rate_country $r_mobi / 100
 mobi_rate_country $size[mobi_rate_country $size < 10] <- 5
 
 ```
-```{r}
-fit <- manova(cbind(MRo_c, MRo_nc) ~ region, data = mobi_rate_country)
-summary(fit)
 
-summary.aov(fit)
-
-TukeyHSD(aov(MRo_c ~ region, data=mobi_rate_country))
-TukeyHSD(aov(MRo_nc ~ region, data=mobi_rate_country))
-```
 
 ```{r}
 # Save the scatter plot (Fig. 3) as a PNG image
