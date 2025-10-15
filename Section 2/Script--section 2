@@ -197,7 +197,7 @@ color <- c(
 
 # Create a data frame with style info (color and shape) for each pair
 pair_style <- data.frame(mobility_pair_15, color)
-pair_style$shape <- 15
+pair_style$shape <- 16
 
 # Merge style info into the pair-level mobility data
 mobi_rate_pair  <-
@@ -216,19 +216,16 @@ mobi_rate_pair $size <- mobi_rate_pair $r_mobi / 100
 
 mobi_rate_pair $size[mobi_rate_pair $size < 10] <- 5
 
+mobi_rate_pair <- mobi_rate_pair %>%
+  arrange(shape, desc(r_mobi)) %>% 
+  mutate(size_scale = rescale(size, to = c(5, 50)))
+
 ```
 
 
 ```{r}
 
-# Save the scatter plot (Fig. 7) as a PNG image
-png(file="Fig QSS7--mobility rate--origin and detinaiton.png", width=1500,height=1500)
-
-# Arrange pair data by shape and r_mobi, and scale point sizes for the plot
-mobi_rate_pair_pair <-mobi_rate_pair  %>% arrange(shape, desc(r_mobi)) %>% mutate(size_scale =scales::rescale(size, to = c(5, 50))) %>% arrange((order)) 
-
-# Create the scatter plot
-ggplot(mobi_rate_pair_pair,
+ggplot(mobi_rate_pair,
            aes(x = MRot_nc, y = MRot_c)) +
     xlim(0, 0.15) +
     ylim(0, 0.15) +
@@ -244,49 +241,49 @@ ggplot(mobi_rate_pair_pair,
       size = 1
     ) +
     geom_vline(
-      xintercept = median(mobi_rate_pair_pair$ MRot_nc),
+      xintercept = median(mobi_rate_pair$ MRot_nc),
       linetype = "dashed",
       color = "grey",
       size = 1.2
     ) +
     geom_hline(
-      yintercept = median(mobi_rate_pair_pair$MRot_c),
+      yintercept = median(mobi_rate_pair$MRot_c),
       linetype = "dashed",
       color = "grey",
       size = 1.2
     ) +
 # Add scatter points for each pair
       geom_point(
-      colour = mobi_rate_pair_pair$color,
-      size = mobi_rate_pair_pair$size_scale,
-      shape = mobi_rate_pair_pair$shape
+      colour = mobi_rate_pair$color,
+      size = mobi_rate_pair$size_scale,
+      shape = mobi_rate_pair$shape
     )+
 # Add labels for selected large points and specific pairs
-    geom_text_repel(aes(label=ifelse(mobi_rate_pair_pair$size_scale>13.65 & mobi_rate_pair_pair$mobility_pair!="US-CA" &
-                                       mobi_rate_pair_pair$mobility_pair!="US-KR" &
-                                       mobi_rate_pair_pair$mobility_pair!="US-UK" 
-                                     & mobi_rate_pair_pair$mobility_pair!="FR-US"
-                                       & mobi_rate_pair_pair$mobility_pair!="UK-US"
-                                     & mobi_rate_pair_pair$mobility_pair!="DE-US"
-                                     ,as.character(mobi_rate_pair_pair$mobility_pair),'')),hjust=0.5,
+    geom_text_repel(aes(label=ifelse(mobi_rate_pair$size_scale>13.65 & mobi_rate_pair$mobility_pair!="US-CA" &
+                                       mobi_rate_pair$mobility_pair!="US-KR" &
+                                       mobi_rate_pair$mobility_pair!="US-UK" 
+                                     & mobi_rate_pair$mobility_pair!="FR-US"
+                                       & mobi_rate_pair$mobility_pair!="UK-US"
+                                     & mobi_rate_pair$mobility_pair!="DE-US"
+                                     ,as.character(mobi_rate_pair$mobility_pair),'')),hjust=0.5,
               vjust=0.5,size=8)+
 # Add labels for specific pairs at custom positions
 
-    geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "US-CA", 
+    geom_text(aes(label = ifelse(mobi_rate_pair$mobility_pair == "US-CA", 
                                    "US-CA", '')),  hjust = 0, vjust = 1, size = 8)+
-    geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "US-KR", 
+    geom_text(aes(label = ifelse(mobi_rate_pair$mobility_pair == "US-KR", 
                                    "US-KR", '')),  hjust = 1, vjust = 0, size = 8)+
-    geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "US-UK", 
+    geom_text(aes(label = ifelse(mobi_rate_pair$mobility_pair == "US-UK", 
                                    "US-UK", '')),  hjust =0, vjust = 1, size = 8)+
-      geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "US-CN", 
+      geom_text(aes(label = ifelse(mobi_rate_pair$mobility_pair == "US-CN", 
                                    "US-CN", '')),  hjust =0.5, vjust = 0.5, size = 8)+
-   geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "US-DE", 
+   geom_text(aes(label = ifelse(mobi_rate_pair$mobility_pair == "US-DE", 
                                    "US-DE", '')),  hjust =1, vjust = 0, size = 8)+
-  geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "FR-US", 
+  geom_text(aes(label = ifelse(mobi_rate_pair$mobility_pair == "FR-US", 
                                    "FR-US", '')),  hjust =0, vjust = 1, size = 8)+
-   geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "UK-US", 
+   geom_text(aes(label = ifelse(mobi_rate_pair$mobility_pair == "UK-US", 
                                    "UK-US", '')),  hjust =0, vjust = 1, size = 8)+
-   geom_text(aes(label = ifelse(mobi_rate_pair_pair$mobility_pair == "DE-US", 
+   geom_text(aes(label = ifelse(mobi_rate_pair$mobility_pair == "DE-US", 
                                    "DE-US", '')),  hjust =0.5, vjust = 0, size = 8)+
     scale_size(range = c(0, 15)) +
     theme_bw() +
@@ -1027,4 +1024,5 @@ grid.arrange(plot_MRotnc_income,plot_CMRot_income, layout_matrix = grid_layout)
 
 dev.off()  # Finish and save the image
 ```
+
 
